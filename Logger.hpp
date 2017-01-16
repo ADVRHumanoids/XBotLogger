@@ -148,24 +148,24 @@ private:
 
         // chose the right severity level
         switch ( _severity ) {
-        case LoggerLevel::INFO : {
-            _console->info ( ss.str() );
-            _rotating_logger->info ( ss.str() );
-            break;
-        }
-        case LoggerLevel::WARNING : {
-            _console->warn ( ss.str() );
-            _rotating_logger->warn ( ss.str() );
-            break;
-        }
-        case LoggerLevel::ERROR : {
-            _console->error ( ss.str() );
-            _rotating_logger->error ( ss.str() );
-            break;
-        }
-        default : {
-            break;
-        }
+            case LoggerLevel::INFO : {
+                _console->info ( ss.str() );
+                _rotating_logger->info ( ss.str() );
+                break;
+            }
+            case LoggerLevel::WARNING : {
+                _console->warn ( ss.str() );
+                _rotating_logger->warn ( ss.str() );
+                break;
+            }
+            case LoggerLevel::ERROR : {
+                _console->error ( ss.str() );
+                _rotating_logger->error ( ss.str() );
+                break;
+            }
+            default : {
+                break;
+            }
         }
     }
 
