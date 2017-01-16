@@ -26,7 +26,6 @@
 #include <sstream>
 
 #include <spdlog/spdlog.h>
-#include <yarp/sig/Image.h>
 
 #define ASYNC_QUEUE_SIZE_BIT 65536
 
