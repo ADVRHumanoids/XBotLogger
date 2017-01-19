@@ -525,7 +525,7 @@ protected:
     }
 private:
 
-    virtual void flush(){}
+    virtual void flush() = 0;
 
     static void sigint_handler(int s){
         std::cout << "SIGINT detected, flushing MatLogger..." << std::endl;
@@ -606,6 +606,10 @@ protected:
 private:
 
     std::shared_ptr<spdlog::logger> _simple_logger;
+
+    virtual void flush(){
+        _simple_logger->flush();
+    }
 
 };
 
