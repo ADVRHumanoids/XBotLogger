@@ -318,6 +318,7 @@ public:
     * @return XBot::SSLogger&
     */
     virtual std::stringstream& info() {
+
         _ss_logger->setSeverityLevel ( XBot::LoggerLevel::INFO );
         return _ss_logger->log();
     }
@@ -570,11 +571,9 @@ public:
         size_t q_size = ASYNC_QUEUE_SIZE_BIT;
         spdlog::set_async_mode ( q_size );
 
-        // set m pattern
-        spdlog::set_pattern("%v");
-
         // rotating file logger
         _simple_logger = spdlog::basic_logger_mt ( logger_name, log_filename );
+        _simple_logger->set_pattern("%v");
     }
 
     virtual ~SPDMatLogger(){
