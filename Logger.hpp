@@ -31,6 +31,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <signal.h>
+
 #define ASYNC_QUEUE_SIZE_BIT 65536
 
 #define M_PREALLOCATION_SIZE 8192
@@ -442,6 +444,8 @@ public:
     static Ptr getLogger( const std::string& logger_name,
                  const std::string& log_filename);
 
+
+
     template < typename Derived >
     void add( const std::string& var_name, const Eigen::MatrixBase<Derived>& var) {
         std::stringstream ss;
@@ -521,6 +525,18 @@ protected:
     }
 private:
 
+    virtual void flush(){}
+
+    static void sigint_handler(int s){
+        std::cout << "SIGINT detected, flushing MatLogger..." << std::endl;
+
+        for(auto& pair : _instance_map){
+            pair.second->flush();
+        }
+
+        exit(1);
+    }
+
     void close() {
         for(auto m_var_count : _var_count_map) {
             std::stringstream ss;
@@ -567,6 +583,7 @@ public:
         MatLogger(logger_name, log_filename)
     {
 
+
         // by default use the async mode to be RT safe
         size_t q_size = ASYNC_QUEUE_SIZE_BIT;
         spdlog::set_async_mode ( q_size );
@@ -601,6 +618,10 @@ std::map<std::string, MatLogger::Ptr> MatLogger::_instance_map;
 
 MatLogger::Ptr MatLogger::getLogger(const std::string& logger_name, const std::string& log_filename)
 {
+
+    if(_instance_map.size() == 0){
+        signal(SIGINT, &MatLogger::sigint_handler);
+    }
 
     if(_instance_map.count(logger_name)) return _instance_map.at(logger_name);
     else{
