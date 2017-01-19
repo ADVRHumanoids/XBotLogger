@@ -255,7 +255,7 @@ public:
      */
      SSConsoleLogger ( const std::string& logger_name ) :
         SSLogger(logger_name,
-                 "/tmp/XBotConsoleLog",
+                 "/tmp/console_log",
                  1048576 * 5,
                  5)
     {
