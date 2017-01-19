@@ -317,9 +317,9 @@ public:
     *
     * @return XBot::SSLogger&
     */
-    virtual SSLogger& info() {
+    virtual std::stringstream& info() {
         _ss_logger->setSeverityLevel ( XBot::LoggerLevel::INFO );
-        return *_ss_logger;
+        return _ss_logger->log();
     }
 
     /**
@@ -327,9 +327,9 @@ public:
      *
      * @return XBot::SSLogger&
      */
-    virtual SSLogger& warning() {
+    virtual std::stringstream& warning() {
         _ss_logger->setSeverityLevel ( XBot::LoggerLevel::WARNING );
-        return *_ss_logger;
+        return _ss_logger->log();
     }
 
     /**
@@ -337,9 +337,9 @@ public:
      *
      * @return XBot::SSLogger&
      */
-    virtual SSLogger& error() {
+    virtual std::stringstream& error() {
         _ss_logger->setSeverityLevel ( XBot::LoggerLevel::ERROR );
-        return *_ss_logger;
+        return _ss_logger->log();
     }
 
     /**
