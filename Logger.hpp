@@ -146,6 +146,8 @@ private:
         std::stringstream ss;
         ss << os.rdbuf();
 
+
+
         // chose the right severity level
         switch ( _severity ) {
             case LoggerLevel::INFO : {
@@ -442,13 +444,16 @@ public:
     typedef std::shared_ptr<MatLogger> Ptr;
 
     static Ptr getLogger( const std::string& logger_name,
-                 const std::string& log_filename);
+                          const std::string& log_filename,
+                          int precision = 6
+                        );
 
 
 
     template < typename Derived >
     void add( const std::string& var_name, const Eigen::MatrixBase<Derived>& var) {
         std::stringstream ss;
+        ss.precision(_precision);
         int current_cout = 0;
         auto it = _var_count_map.find(var_name);
         if(it != _var_count_map.end()) {
@@ -515,11 +520,14 @@ protected:
     virtual void add_internal( const std::string& var_string) = 0;
 
     MatLogger ( const std::string& logger_name,
-                const std::string& log_filename ) :
+                const std::string& log_filename,
+                int precision
+              ) :
         _logger_name(logger_name),
         _log_filename(log_filename),
         _scalar_var(1),
-        _mat_fmt(Eigen::FullPrecision, 0, ", ", ";\n", "", "", "[", "]")
+        _mat_fmt(Eigen::StreamPrecision, 0, ", ", ";\n", "", "", "[", "]"),
+        _precision(precision)
     {
 
     }
@@ -555,6 +563,8 @@ private:
 
     Eigen::IOFormat _mat_fmt;
 
+    int _precision;
+
     std::string _logger_name;
     std::string _log_filename;
 
@@ -579,8 +589,10 @@ public:
      *
      */
      SPDMatLogger ( const std::string& logger_name,
-                      const std::string& log_filename ) :
-        MatLogger(logger_name, log_filename)
+                      const std::string& log_filename,
+                      int precision
+                  ) :
+        MatLogger(logger_name, log_filename, precision)
     {
 
 
@@ -620,7 +632,7 @@ void LoggerEndl::print ( std::ostream& ss ) {
 
 std::map<std::string, MatLogger::Ptr> MatLogger::_instance_map;
 
-MatLogger::Ptr MatLogger::getLogger(const std::string& logger_name, const std::string& log_filename)
+MatLogger::Ptr MatLogger::getLogger(const std::string& logger_name, const std::string& log_filename, int precision)
 {
 
     if(_instance_map.size() == 0){
@@ -629,7 +641,7 @@ MatLogger::Ptr MatLogger::getLogger(const std::string& logger_name, const std::s
 
     if(_instance_map.count(logger_name)) return _instance_map.at(logger_name);
     else{
-        Ptr ptr(new SPDMatLogger(logger_name, log_filename));
+        Ptr ptr(new SPDMatLogger(logger_name, log_filename, precision));
         _instance_map[logger_name] = ptr;
         return ptr;
     }
