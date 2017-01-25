@@ -33,6 +33,8 @@
 
 #include <signal.h>
 
+#include <time.h>
+
 #define ASYNC_QUEUE_SIZE_BIT 65536
 
 #define M_PREALLOCATION_SIZE 8192
@@ -595,13 +597,26 @@ public:
         MatLogger(logger_name, log_filename, precision)
     {
 
+        // retrieve time
+        time_t rawtime;
+        struct tm * timeinfo;
+        char buffer [80];
+
+        std::time (&rawtime);
+        timeinfo = localtime (&rawtime);
+
+        strftime(buffer,80,"_%F-%H-%M-%S.m",timeinfo);
+        puts (buffer);
+
 
         // by default use the async mode to be RT safe
         size_t q_size = ASYNC_QUEUE_SIZE_BIT;
         spdlog::set_async_mode ( q_size );
 
         // rotating file logger
-        _simple_logger = spdlog::basic_logger_mt ( logger_name, log_filename );
+        std::string file_name_extended;
+        file_name_extended = log_filename+std::string(buffer);
+        _simple_logger = spdlog::basic_logger_mt ( logger_name, file_name_extended );
         _simple_logger->set_pattern("%v");
     }
 
