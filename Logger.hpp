@@ -35,6 +35,8 @@
 
 #include <time.h>
 
+#include <matio.h>
+
 #define ASYNC_QUEUE_SIZE_BIT 65536
 
 #define M_PREALLOCATION_SIZE 8192
@@ -438,229 +440,219 @@ private:
 
 ConsoleLogger::Ptr ConsoleLogger::_instance;
 
+#define DEFAULT_BUFFER_SIZE 60000
 
 class MatLogger {
+
+
+
+protected: enum class VariableType { Scalar, Vector, Matrix };
+
+protected: struct VariableInfo{
+
+    int interleave = 1;
+    int count = 0;
+    VariableType type;
+    Eigen::MatrixXd data;
+    int rows, cols;
+    int buffer_capacity;
+    int head = 0, tail = 0;
+    bool empty = true;
+
+    void rearrange()
+    {
+        if( empty ){
+            data.resize(0,0);
+            return;
+        }
+
+        if( tail > head ){
+            data.conservativeResize(data.rows(), tail-head);
+            return;
+        }
+
+        for( int i = 0; i < data.cols()-tail; i++ )
+            circshift();
+
+
+    }
+
+private:
+
+    void circshift(){
+        for( int i = 1; i < data.cols(); i++){
+            data.col(i).swap(data.col(0));
+        }
+    }
+
+};
 
 public:
 
     typedef std::shared_ptr<MatLogger> Ptr;
 
-    static Ptr getLogger( const std::string& logger_name,
-                          const std::string& log_filename,
-                          int precision = 6
-                        );
-
-
-
-    template < typename Derived >
-    void add( const std::string& var_name, const Eigen::MatrixBase<Derived>& var) {
-        std::stringstream ss;
-        ss.precision(_precision);
-        int current_cout = 0;
-        auto it = _var_count_map.find(var_name);
-        if(it != _var_count_map.end()) {
-            it->second++;
-            current_cout = it->second;
+    static Ptr getLogger(std::string filename)
+    {
+        if( _instances.count(filename) ){
+            return _instances.at(filename);
         }
-        else {
-            // create the var in the _var_count_map
-            _var_count_map[var_name] = 1;
-            current_cout = 1;
+        else{
+            _instances[filename] = Ptr(new MatLogger(filename));
+            return _instances.at(filename);
+        }
+    }
 
-            // set the var _var_dim_map
-            _var_dim_map[var_name] = std::make_pair<int,int>(var.rows(), var.cols());
 
-            // name of the variable
-            ss << var_name;
-
-            //check if matrix or vector and allocated it
-            if(var.cols() == 1) {
-                // NOTE only column vecotrs
-                ss << "(" << var.rows() << "," << M_PREALLOCATION_SIZE << ") = 0;" << std::endl;
-            }
-            else {
-                // NOTE matrix is a cube
-                ss << "(" << var.rows() << "," << var.cols() << "," << M_PREALLOCATION_SIZE << ") = 0;" << std::endl;
-            }
-
+    bool createScalarVariable(std::string name, int interleave = 1, int buffer_size = DEFAULT_BUFFER_SIZE)
+    {
+        if(_var_idx_map.count(name)){
+            return false;
         }
 
-        if(_var_dim_map.at(var_name).first != var.rows() ||
-           _var_dim_map.at(var_name).second != var.cols() ){
-            // NOTE do it on the logger
-            std::cerr << "Error in " << __func__ << " : provided Matrix/Vector has mismatching dimensions" << std::endl;
-            return;
-        }
+        _var_idx_map[name] = VariableInfo();
 
-        //check if matrix or vector and fill it
-        if(var.cols() == 1) {
-            // NOTE only column vectors
-            ss << var_name << "(:," << current_cout << ") = " << var.format(_mat_fmt) << ";" << std::endl;
-        }
-        else {
-            // NOTE matrix is a cube
-            ss << var_name << "(:,:," << current_cout << ") = " << var.format(_mat_fmt) << ";" << std::endl;
-        }
+        VariableInfo& varinfo = _var_idx_map.at(name);
 
-        add_internal(ss.str() );
+        varinfo.interleave = interleave;
+        varinfo.count = -1;
+        varinfo.type = VariableType::Scalar;
+        varinfo.data = Eigen::VectorXd::Zero(buffer_size);
+        varinfo.rows = 1;
+        varinfo.cols = 1;
+        varinfo.buffer_capacity = buffer_size;
+
+
+        return true;
 
     }
 
-    virtual void add( const std::string& var_name, float var) {
-        _scalar_var[0] = var;
-        add(var_name, _scalar_var);
+    bool createVectorVariable(std::string name, int size, int interleave = 1, int buffer_size = DEFAULT_BUFFER_SIZE)
+    {
+        if(_var_idx_map.count(name)){
+            return false;
+        }
+
+        _var_idx_map[name] = VariableInfo();
+
+        VariableInfo& varinfo = _var_idx_map.at(name);
+
+        varinfo.interleave = interleave;
+        varinfo.count = 0;
+        varinfo.type = VariableType::Vector;
+        varinfo.data = Eigen::MatrixXd::Zero(size, buffer_size);
+        varinfo.rows = size;
+        varinfo.cols = 1;
+        varinfo.buffer_capacity = buffer_size;
+
+
+        return true;
     }
 
-    virtual ~MatLogger() {
-        // TBD how to do it?
-//         std::cout << "~~~~~~~MatLogger" << std::endl;
-//         close();
+    bool createMatrixVariable(std::string name, int rows, int cols, int interleave = 1, int buffer_size = DEFAULT_BUFFER_SIZE)
+    {
+        return false;
+    }
+
+    template <typename Derived>
+    bool add(const std::string& name, const Eigen::MatrixBase<Derived>& data)
+    {
+        auto it = _var_idx_map.find(name);
+
+        if( it == _var_idx_map.end() ){
+            return false;
+        }
+
+        VariableInfo& varinfo = it->second;
+
+        if( data.rows() != varinfo.rows || data.cols() != varinfo.cols ){
+            return false;
+        }
+
+        if( data.cols() > 1 ) return false; //TBD
+
+        if( varinfo.count % varinfo.interleave != 0 ){
+
+        }
+
+        // if buffer is not empty and head = tail, increment head since we are going to overwrite an element
+        if( !varinfo.empty && varinfo.head == varinfo.tail ){
+            varinfo.head = (varinfo.head + 1) % varinfo.buffer_capacity;
+        }
+
+        // write to tail position
+        varinfo.data.col(varinfo.tail) = data;
+        varinfo.empty = false;
+
+        // increment tail position
+        varinfo.tail = (varinfo.tail + 1) % varinfo.buffer_capacity;
+
+    }
+
+    bool add(const std::string& name, double data)
+    {
+        Eigen::Matrix<double, 1, 1> eigen_data;
+        eigen_data(0) = data;
+        return add(name, eigen_data);
+    }
+
+    ~MatLogger()
+    {
+
+
+        mat_t * mat_file = Mat_CreateVer(_file_name.c_str(), nullptr, MAT_FT_MAT73);
+
+        if(!mat_file){
+            std::cout << "ERROR creating MAT file!" << std::endl;
+        }
+
+        for( auto& pair : _var_idx_map ){
+
+            VariableInfo& varinfo = pair.second;
+
+            varinfo.rearrange();
+
+            std::size_t dims[2];
+            dims[0] = varinfo.data.rows();
+            dims[1] = varinfo.data.cols();
+
+            matvar_t * mat_var = Mat_VarCreate(pair.first.c_str(),
+                                               MAT_C_DOUBLE,
+                                               MAT_T_DOUBLE,
+                                               2,
+                                               dims,
+                                               (void *)varinfo.data.data(),
+                                               0 );
+
+            Mat_VarWrite(mat_file, mat_var, MAT_COMPRESSION_ZLIB);
+            Mat_VarFree(mat_var);
+
+        }
+
+
+
     }
 
 protected:
 
-    virtual void add_internal( const std::string& var_string) = 0;
+    MatLogger(std::string file_name):
+        _file_name(file_name)
+    {}
 
-    MatLogger ( const std::string& logger_name,
-                const std::string& log_filename,
-                int precision
-              ) :
-        _logger_name(logger_name),
-        _log_filename(log_filename),
-        _scalar_var(1),
-        _mat_fmt(Eigen::StreamPrecision, 0, ", ", ";\n", "", "", "[", "]"),
-        _precision(precision)
-    {
-
-    }
-private:
-
-    virtual void flush() = 0;
-
-    static void sigint_handler(int s){
-        std::cout << "SIGINT detected, flushing MatLogger..." << std::endl;
-
-        for(auto& pair : _instance_map){
-            pair.second->flush();
-        }
-
-        exit(1);
-    }
-
-    void close() {
-        for(auto m_var_count : _var_count_map) {
-            std::stringstream ss;
-            if(_var_dim_map.at(m_var_count.first).first == 1) {
-                // NOTE only column vecotrs
-                ss << m_var_count.first << "=" << m_var_count.first << "(:,1:" << m_var_count.second << ");" << std::endl;
-            }
-            else {
-                // NOTE matrix is a cube
-                ss << m_var_count.first << "=" << m_var_count.first << "(:,:,1:" << m_var_count.second << ");" << std::endl;
-            }
-
-            add_internal(ss.str());
-        }
-    }
-
-    Eigen::IOFormat _mat_fmt;
-
-    int _precision;
-
-    std::string _logger_name;
-    std::string _log_filename;
-
-    std::string _var_string;
-
-    Eigen::VectorXd _scalar_var;
-
-    std::unordered_map<std::string, int> _var_count_map;
-    std::unordered_map<std::string, std::pair<int,int>> _var_dim_map;
-
-    static std::map<std::string, Ptr> _instance_map;
-
-
-};
-
-class SPDMatLogger : public MatLogger {
-
-public:
-     /**
-     * @brief SSLogger constructor
-     *
-     *
-     */
-     SPDMatLogger ( const std::string& logger_name,
-                      const std::string& log_filename,
-                      int precision
-                  ) :
-        MatLogger(logger_name, log_filename, precision)
-    {
-
-        // retrieve time
-        time_t rawtime;
-        struct tm * timeinfo;
-        char buffer [80];
-
-        std::time (&rawtime);
-        timeinfo = localtime (&rawtime);
-
-        strftime(buffer,80,"_%F-%H-%M-%S.m",timeinfo);
-        puts (buffer);
-
-
-        // by default use the async mode to be RT safe
-        size_t q_size = ASYNC_QUEUE_SIZE_BIT;
-        spdlog::set_async_mode ( q_size );
-
-        // rotating file logger
-        std::string file_name_extended;
-        file_name_extended = log_filename+std::string(buffer);
-        _simple_logger = spdlog::basic_logger_mt ( logger_name, file_name_extended );
-        _simple_logger->set_pattern("%v");
-    }
-
-    virtual ~SPDMatLogger(){
-//         std::cout << "~~~~~~~SPDMatLogger" << std::endl;
-    }
-
-protected:
-
-    void add_internal( const std::string& var_string) {
-        _simple_logger->info(var_string);
-    }
+    std::unordered_map<std::string, VariableInfo> _var_idx_map;
+    std::string _file_name;
 
 private:
 
-    std::shared_ptr<spdlog::logger> _simple_logger;
-
-    virtual void flush(){
-        _simple_logger->flush();
-    }
+    static std::unordered_map<std::string, Ptr> _instances;
 
 };
+
+std::unordered_map<std::string, MatLogger::Ptr> MatLogger::_instances;
+
 
 // now that SSLogger is completely defined we can implment the print()
 void LoggerEndl::print ( std::ostream& ss ) {
     _ss_logger->print ( ss );
-}
-
-std::map<std::string, MatLogger::Ptr> MatLogger::_instance_map;
-
-MatLogger::Ptr MatLogger::getLogger(const std::string& logger_name, const std::string& log_filename, int precision)
-{
-
-    if(_instance_map.size() == 0){
-        signal(SIGINT, &MatLogger::sigint_handler);
-    }
-
-    if(_instance_map.count(logger_name)) return _instance_map.at(logger_name);
-    else{
-        Ptr ptr(new SPDMatLogger(logger_name, log_filename, precision));
-        _instance_map[logger_name] = ptr;
-        return ptr;
-    }
-
 }
 
 
