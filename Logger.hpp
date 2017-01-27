@@ -471,10 +471,8 @@ protected: struct VariableInfo{
             return;
         }
 
-        for( int i = 0; i < data.cols()-tail; i++ )
+        for( int i = 0; i < (data.cols()-tail)*cols; i++ )
             circshift();
-
-
     }
 
 private:
@@ -550,7 +548,24 @@ public:
 
     bool createMatrixVariable(std::string name, int rows, int cols, int interleave = 1, int buffer_size = DEFAULT_BUFFER_SIZE)
     {
-        return false;
+        if(_var_idx_map.count(name)){
+            return false;
+        }
+
+        _var_idx_map[name] = VariableInfo();
+
+        VariableInfo& varinfo = _var_idx_map.at(name);
+
+        varinfo.interleave = interleave;
+        varinfo.count = 0;
+        varinfo.type = VariableType::Vector;
+        varinfo.data = Eigen::MatrixXd::Zero(rows, cols*buffer_size);
+        varinfo.rows = size;
+        varinfo.cols = 1;
+        varinfo.buffer_capacity = buffer_size;
+
+
+        return true;
     }
 
     template <typename Derived>
@@ -576,15 +591,15 @@ public:
 
         // if buffer is not empty and head = tail, increment head since we are going to overwrite an element
         if( !varinfo.empty && varinfo.head == varinfo.tail ){
-            varinfo.head = (varinfo.head + 1) % varinfo.buffer_capacity;
+            varinfo.head = (varinfo.head + varinfo.cols) % varinfo.buffer_capacity;
         }
 
         // write to tail position
-        varinfo.data.col(varinfo.tail) = data;
+        varinfo.data.block(0,varinfo.tail,varinfo.rows,varinfo.cols) = data;
         varinfo.empty = false;
 
         // increment tail position
-        varinfo.tail = (varinfo.tail + 1) % varinfo.buffer_capacity;
+        varinfo.tail = (varinfo.tail + varinfo.cols) % varinfo.buffer_capacity;
 
     }
 
@@ -610,15 +625,25 @@ public:
             VariableInfo& varinfo = pair.second;
 
             varinfo.rearrange();
-
-            std::size_t dims[2];
-            dims[0] = varinfo.data.rows();
-            dims[1] = varinfo.data.cols();
+            
+            int n_dims = 2;
+            std::size_t dims[3];
+            
+            if( varinfo.type == VariableType::Matrix ){
+                n_dims = 3;
+                dims[0] = varinfo.rows;
+                dims[1] = varinfo.cols;
+                dims[2] = varinfo.data.cols()/varinfo.cols;
+            }
+            else{
+                dims[0] = varinfo.data.rows();
+                dims[1] = varinfo.data.cols();
+            }
 
             matvar_t * mat_var = Mat_VarCreate(pair.first.c_str(),
                                                MAT_C_DOUBLE,
                                                MAT_T_DOUBLE,
-                                               2,
+                                               n_dims,
                                                dims,
                                                (void *)varinfo.data.data(),
                                                0 );
