@@ -467,11 +467,11 @@ protected: struct VariableInfo{
         }
 
         if( tail > head ){
-            data.conservativeResize(data.rows(), tail-head);
+            data.conservativeResize(data.rows(), cols*(tail-head));
             return;
         }
 
-        for( int i = 0; i < (data.cols()-tail)*cols; i++ )
+        for( int i = 0; i < (buffer_capacity-tail)*cols; i++ )
             circshift();
     }
 
@@ -558,10 +558,10 @@ public:
 
         varinfo.interleave = interleave;
         varinfo.count = 0;
-        varinfo.type = VariableType::Vector;
+        varinfo.type = VariableType::Matrix;
         varinfo.data = Eigen::MatrixXd::Zero(rows, cols*buffer_size);
-        varinfo.rows = size;
-        varinfo.cols = 1;
+        varinfo.rows = rows;
+        varinfo.cols = cols;
         varinfo.buffer_capacity = buffer_size;
 
 
@@ -583,7 +583,7 @@ public:
             return false;
         }
 
-        if( data.cols() > 1 ) return false; //TBD
+//         if( data.cols() > 1 ) return false; //TBD
 
         if( varinfo.count % varinfo.interleave != 0 ){
 
@@ -591,15 +591,15 @@ public:
 
         // if buffer is not empty and head = tail, increment head since we are going to overwrite an element
         if( !varinfo.empty && varinfo.head == varinfo.tail ){
-            varinfo.head = (varinfo.head + varinfo.cols) % varinfo.buffer_capacity;
+            varinfo.head = (varinfo.head + 1) % varinfo.buffer_capacity;
         }
 
         // write to tail position
-        varinfo.data.block(0,varinfo.tail,varinfo.rows,varinfo.cols) = data;
+        varinfo.data.block(0,varinfo.tail*varinfo.cols,varinfo.rows,varinfo.cols) = data;
         varinfo.empty = false;
 
         // increment tail position
-        varinfo.tail = (varinfo.tail + varinfo.cols) % varinfo.buffer_capacity;
+        varinfo.tail = (varinfo.tail + 1) % varinfo.buffer_capacity;
 
     }
 
