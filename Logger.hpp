@@ -557,7 +557,7 @@ public:
         VariableInfo& varinfo = _var_idx_map.at(name);
 
         varinfo.interleave = interleave;
-        varinfo.count = 0;
+        varinfo.count = -1;
         varinfo.type = VariableType::Matrix;
         varinfo.data = Eigen::MatrixXd::Zero(rows, cols*buffer_size);
         varinfo.rows = rows;
@@ -574,19 +574,22 @@ public:
         auto it = _var_idx_map.find(name);
 
         if( it == _var_idx_map.end() ){
+            _clog->warning() << " in " << __func__ << "! Variable with name " << name << " has NOT been created yet!" << _clog->endl();
             return false;
         }
 
         VariableInfo& varinfo = it->second;
 
         if( data.rows() != varinfo.rows || data.cols() != varinfo.cols ){
+            _clog->warning() << " in " << __func__ << "! Provided data has unmatching dimensions!" << _clog->endl();
             return false;
         }
 
-//         if( data.cols() > 1 ) return false; //TBD
 
-        if( varinfo.count % varinfo.interleave != 0 ){
+        varinfo.count = (varinfo.count + 1) % varinfo.interleave;
 
+        if( varinfo.count != 0 ){
+            return true;
         }
 
         // if buffer is not empty and head = tail, increment head since we are going to overwrite an element
@@ -617,7 +620,7 @@ public:
         mat_t * mat_file = Mat_CreateVer(_file_name.c_str(), nullptr, MAT_FT_MAT73);
 
         if(!mat_file){
-            std::cout << "ERROR creating MAT file!" << std::endl;
+            _clog->error() << "ERROR creating MAT file!" << _clog->endl();
         }
 
         for( auto& pair : _var_idx_map ){
@@ -625,10 +628,10 @@ public:
             VariableInfo& varinfo = pair.second;
 
             varinfo.rearrange();
-            
+
             int n_dims = 2;
             std::size_t dims[3];
-            
+
             if( varinfo.type == VariableType::Matrix ){
                 n_dims = 3;
                 dims[0] = varinfo.rows;
@@ -660,7 +663,7 @@ public:
 protected:
 
     MatLogger(std::string file_name):
-        _file_name(file_name)
+        _file_name(file_name), _clog(ConsoleLogger::getLogger())
     {}
 
     std::unordered_map<std::string, VariableInfo> _var_idx_map;
@@ -669,6 +672,7 @@ protected:
 private:
 
     static std::unordered_map<std::string, Ptr> _instances;
+    ConsoleLogger::Ptr _clog;
 
 };
 
