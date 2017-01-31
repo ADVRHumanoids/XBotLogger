@@ -672,10 +672,26 @@ public:
 protected:
 
     MatLogger(std::string file_name):
-        _file_name(file_name),
         _clog(ConsoleLogger::getLogger()),
         _flushed(false)
-    {}
+    {
+        // retrieve time
+        time_t rawtime;
+        struct tm * timeinfo;
+        char buffer [80];
+
+        std::time (&rawtime);
+        timeinfo = localtime (&rawtime);
+
+        strftime(buffer,80,"__%Y_%m_%d__%H_%M_%S.mat",timeinfo);
+        puts (buffer);
+
+        // rotating file logger
+        std::string file_name_extended;
+        file_name_extended = file_name+std::string(buffer);
+
+        _file_name = file_name_extended;
+    }
 
     std::unordered_map<std::string, VariableInfo> _var_idx_map;
     std::string _file_name;
