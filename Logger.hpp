@@ -613,9 +613,13 @@ public:
         return add(name, eigen_data);
     }
 
-    ~MatLogger()
-    {
+    void flush(){
 
+        if(_flushed) return;
+
+        _flushed = true;
+
+        std::cout << "Dumping data to mat file " << _file_name << std::endl;
 
         mat_t * mat_file = Mat_CreateVer(_file_name.c_str(), nullptr, MAT_FT_MAT73);
 
@@ -660,10 +664,17 @@ public:
 
     }
 
+
+    ~MatLogger(){
+        flush();
+    }
+
 protected:
 
     MatLogger(std::string file_name):
-        _file_name(file_name), _clog(ConsoleLogger::getLogger())
+        _file_name(file_name),
+        _clog(ConsoleLogger::getLogger()),
+        _flushed(false)
     {}
 
     std::unordered_map<std::string, VariableInfo> _var_idx_map;
@@ -673,6 +684,7 @@ private:
 
     static std::unordered_map<std::string, Ptr> _instances;
     ConsoleLogger::Ptr _clog;
+    bool _flushed;
 
 };
 
