@@ -73,13 +73,6 @@ private:
 
 };
 
-/////////////////////////////////////////////////////////////////////////////////////
-// LoggerEndl << operator : print the os using the different Logger severity level //
-/////////////////////////////////////////////////////////////////////////////////////
-
-void operator<< ( std::ostream& os, LoggerEndl& log ) {
-    log.print ( os );
-}
 
 
 /**
@@ -402,7 +395,6 @@ private:
 
 };
 
-std::map<std::string, FileLogger::Ptr> FileLogger::_instance_map;
 
 class ConsoleLogger : public Logger {
 
@@ -438,7 +430,6 @@ private:
 
 };
 
-ConsoleLogger::Ptr ConsoleLogger::_instance;
 
 #define DEFAULT_BUFFER_SIZE 60000
 
@@ -703,14 +694,6 @@ private:
     bool _flushed;
 
 };
-
-std::unordered_map<std::string, MatLogger::Ptr> MatLogger::_instances;
-
-
-// now that SSLogger is completely defined we can implment the print()
-void LoggerEndl::print ( std::ostream& ss ) {
-    _ss_logger->print ( ss );
-}
 
 
 
