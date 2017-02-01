@@ -431,7 +431,7 @@ private:
 };
 
 
-#define DEFAULT_BUFFER_SIZE 60000
+#define DEFAULT_BUFFER_SIZE 134217728 // 128 MB
 
 class MatLogger {
 
@@ -492,8 +492,12 @@ public:
     }
 
 
-    bool createScalarVariable(std::string name, int interleave = 1, int buffer_size = DEFAULT_BUFFER_SIZE)
+    bool createScalarVariable(std::string name, int interleave = 1, int buffer_size = -1)
     {
+        if( buffer_size < 0 ){
+            buffer_size = 1024*1024*1024;
+        }
+
         if(_var_idx_map.count(name)){
             return false;
         }
@@ -515,8 +519,12 @@ public:
 
     }
 
-    bool createVectorVariable(std::string name, int size, int interleave = 1, int buffer_size = DEFAULT_BUFFER_SIZE)
+    bool createVectorVariable(std::string name, int size, int interleave = 1, int buffer_size = -1)
     {
+        if( buffer_size < 0 ){
+            buffer_size = DEFAULT_BUFFER_SIZE / (size * 8);
+        }
+
         if(_var_idx_map.count(name)){
             return false;
         }
@@ -537,11 +545,17 @@ public:
         return true;
     }
 
-    bool createMatrixVariable(std::string name, int rows, int cols, int interleave = 1, int buffer_size = DEFAULT_BUFFER_SIZE)
+    bool createMatrixVariable(std::string name, int rows, int cols, int interleave = 1, int buffer_size = -1)
     {
+
+        if( buffer_size < 0 ){
+            buffer_size = DEFAULT_BUFFER_SIZE / (rows * cols * 8);
+        }
+
         if(_var_idx_map.count(name)){
             return false;
         }
+
 
         _var_idx_map[name] = VariableInfo();
 
@@ -565,8 +579,18 @@ public:
         auto it = _var_idx_map.find(name);
 
         if( it == _var_idx_map.end() ){
-            _clog->warning() << " in " << __func__ << "! Variable with name " << name << " has NOT been created yet!" << _clog->endl();
-            return false;
+
+            _clog->warning() << " in " << __func__ << "! Variable with name " << name << " has NOT been created yet! This will cause memory allocation!" << _clog->endl();
+
+            if( data.cols() == 1 ){
+                createVectorVariable(name, data.size(), 1, -1);
+                return add(name, data);
+            }
+            else{
+                createMatrixVariable(name, data.rows(), data.cols(), 1, -1);
+                return add(name, data);
+            }
+
         }
 
         VariableInfo& varinfo = it->second;
