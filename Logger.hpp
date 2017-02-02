@@ -27,7 +27,7 @@
 
 #include <unordered_map>
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 
 #include <spdlog/spdlog.h>
 
@@ -457,7 +457,7 @@ protected: struct VariableInfo{
             return;
         }
 
-        if( tail > head ){
+        if( tail > head || (head == tail && tail == 0) ){
             data.conservativeResize(data.rows(), cols*(tail-head));
             return;
         }
