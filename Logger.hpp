@@ -452,12 +452,13 @@ protected: struct VariableInfo{
 
     void rearrange()
     {
+
         if( empty ){
             data.resize(0,0);
             return;
         }
 
-        if( tail > head || (head == tail && tail == 0) ){
+        if( tail > head ){
             data.conservativeResize(data.rows(), cols*(tail-head));
             return;
         }
@@ -607,6 +608,8 @@ public:
             return true;
         }
 
+        varinfo.tail = varinfo.tail % varinfo.buffer_capacity;
+
         // if buffer is not empty and head = tail, increment head since we are going to overwrite an element
         if( !varinfo.empty && varinfo.head == varinfo.tail ){
             varinfo.head = (varinfo.head + 1) % varinfo.buffer_capacity;
@@ -617,7 +620,7 @@ public:
         varinfo.empty = false;
 
         // increment tail position
-        varinfo.tail = (varinfo.tail + 1) % varinfo.buffer_capacity;
+        varinfo.tail = (varinfo.tail + 1) ;
 
     }
 
