@@ -492,6 +492,29 @@ public:
         }
     }
 
+    template <typename Derived>
+    bool log(const std::string& name, const Eigen::MatrixBase<Derived>& data){
+
+        auto it = _single_var_map.find(name);
+
+        if( it != _single_var_map.end() ){
+            if( it->second.rows() == data.rows() && it->second.cols() == data.cols() ){
+                it->second = data;
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        else{
+            _single_var_map[name] = data;
+            return true;
+        }
+
+
+
+
+    }
 
     bool createScalarVariable(std::string name, int interleave = 1, int buffer_size = -1)
     {
@@ -712,6 +735,7 @@ protected:
     }
 
     std::unordered_map<std::string, VariableInfo> _var_idx_map;
+    std::unordered_map<std::string, Eigen::MatrixXd> _single_var_map;
     std::string _file_name;
 
 private:
