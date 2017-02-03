@@ -530,7 +530,7 @@ public:
     template <typename Derived>
     bool log(const std::string& name, const Eigen::MatrixBase<Derived>& data){
 
-        if( _var_idx_map.find(name) ){
+        if( _var_idx_map.count(name) ){
             return false;
         }
 
