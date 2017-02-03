@@ -431,8 +431,25 @@ private:
 };
 
 
-#define DEFAULT_BUFFER_SIZE 134217728 // 128 MB
+#define DEFAULT_BUFFER_SIZE 13421772 // 12.8 MB
 
+/**
+ * @brief The MatLogger class provides functionality to log numerical
+ * data to binary .mat files which can be easily imported in MATLAB/
+ * OCTAVE/scipy/...
+ *
+ * Usage:
+ *  - obtain a pointer to the MatLogger by calling the factory method
+ * MatLogger::getLogger(filename_without_extension)
+ *  - during the initialization phase, preallocate memory for the
+ * variables to be logged (not mandatory, but makes the logger RT
+ * safe) with methods createScalarVariable(), createVectorVariable(),
+ * createMatrixVariable()
+ *  - inside the loop, log data with the method add()
+ *  - you can actually dump data to the mat file manually by calling flush(),
+ *    otherwise the dumping will be done inside the destructor
+ *
+ */
 class MatLogger {
 
 
@@ -463,8 +480,11 @@ protected: struct VariableInfo{
             return;
         }
 
-        for( int i = 0; i < (buffer_capacity-tail)*cols; i++ )
+        for( int i = 0; i < (buffer_capacity-tail)*cols; i++ ){
+            auto log = XBot::ConsoleLogger::getLogger();
+            log->info() << "Rearranging data from circular array...be patient! [TBD improve performance]" << log->endl();
             circshift();
+        }
     }
 
 private:
@@ -481,6 +501,12 @@ public:
 
     typedef std::shared_ptr<MatLogger> Ptr;
 
+    /**
+     * @brief Factory method which returns a matlogger which
+     * saves on the mat file provided as an argument.
+     *
+     * @return A shared pointer to the requested MatLogger
+     */
     static Ptr getLogger(std::string filename)
     {
         if( _instances.count(filename) ){
@@ -492,8 +518,21 @@ public:
         }
     }
 
+
+    /**
+     * @brief Logs a single variable to the mat file. Each call will overwrite
+     * the variable (each time data dimensions must remain the same)
+     *
+     * @param name The name of the variable
+     * @return True if variable with provided name either does not exist yet, or
+     * has matching dimensions.
+     */
     template <typename Derived>
     bool log(const std::string& name, const Eigen::MatrixBase<Derived>& data){
+
+        if( _var_idx_map.find(name) ){
+            return false;
+        }
 
         auto it = _single_var_map.find(name);
 
@@ -516,13 +555,21 @@ public:
 
     }
 
+    /**
+     * @brief Allocate memory for logging a scalar variable.
+     *
+     * @param name The name of the variable to be logged.
+     * @param interleave The variable will be actually logged every interleave calls to the method add() (default is 1)
+     * @param buffer_size Max number of samples that will be logged before overwriting the oldest ones (default one million)
+     * @return True if the requested name is available.
+     */
     bool createScalarVariable(std::string name, int interleave = 1, int buffer_size = -1)
     {
         if( buffer_size < 0 ){
             buffer_size = 1024*1024*1024;
         }
 
-        if(_var_idx_map.count(name)){
+        if(_var_idx_map.count(name) || _single_var_map.count(name)){
             return false;
         }
 
@@ -543,6 +590,15 @@ public:
 
     }
 
+    /**
+     * @brief Allocate memory for logging a scalar variable.
+     *
+     * @param name The name of the variable to be logged.
+     * @param size The size of the vector to be logged (i.e. its number of elements)
+     * @param interleave The variable will be actually logged every interleave calls to the method add() (default is 1)
+     * @param buffer_size Max number of samples that will be logged before overwriting the oldest ones (by default 12.8 MB of memory are allocated)
+     * @return True if the requested name is available.
+     */
     bool createVectorVariable(std::string name, int size, int interleave = 1, int buffer_size = -1)
     {
         if( buffer_size < 0 ){
@@ -569,6 +625,16 @@ public:
         return true;
     }
 
+    /**
+     * @brief Allocate memory for logging a scalar variable.
+     *
+     * @param name The name of the variable to be logged.
+     * @param rows The number of rows of the vector to be logged
+     * @param cols The number of columns of the vector to be logged
+     * @param interleave The variable will be actually logged every interleave calls to the method add() (default is 1)
+     * @param buffer_size Max number of samples that will be logged before overwriting the oldest ones (by default 12.8 MB of memory are allocated)
+     * @return True if the requested name is available.
+     */
     bool createMatrixVariable(std::string name, int rows, int cols, int interleave = 1, int buffer_size = -1)
     {
 
@@ -597,6 +663,16 @@ public:
         return true;
     }
 
+
+    /**
+     * @brief Logs the provided data to the MAT variable with the provided name.
+     * If such a variable was not defined by calling a createVariable() method,
+     * the call to add() causes memory allocation and is not RT safe.
+     *
+     * @param name MAT variable name.
+     * @param data The Eigen varible to be logged.
+     * @return True if
+     */
     template <typename Derived>
     bool add(const std::string& name, const Eigen::MatrixBase<Derived>& data)
     {
@@ -654,6 +730,12 @@ public:
         return add(name, eigen_data);
     }
 
+    /**
+     * @brief Does the actual work of saving data to disk. Since
+     * this is a time-consuming operation, should be done outside of
+     * any high performance loop. If not explicitly called in the code,
+     * flush() is anyway performed in the class destructor.
+     */
     void flush(){
 
         if(_flushed) return;
