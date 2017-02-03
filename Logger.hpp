@@ -550,9 +550,6 @@ public:
             return true;
         }
 
-
-
-
     }
 
     /**
@@ -748,6 +745,25 @@ public:
 
         if(!mat_file){
             _clog->error() << "ERROR creating MAT file!" << _clog->endl();
+        }
+
+        for( auto& pair : _single_var_map ){
+
+            int n_dims = 2;
+            std::size_t dims[2] = {pair.second.rows(), pair.second.cols()};
+
+
+            matvar_t * mat_var = Mat_VarCreate(pair.first.c_str(),
+                                               MAT_C_DOUBLE,
+                                               MAT_T_DOUBLE,
+                                               n_dims,
+                                               dims,
+                                               (void *)pair.second.data(),
+                                               0 );
+
+            Mat_VarWrite(mat_file, mat_var, MAT_COMPRESSION_ZLIB);
+            Mat_VarFree(mat_var);
+
         }
 
         for( auto& pair : _var_idx_map ){
