@@ -552,6 +552,11 @@ public:
 
     }
 
+    bool log(const std::string& name, const std::vector<double>& data){
+        Eigen::Map<Eigen::MatrixXd> map((double *)data.data(), (int)data.size(), 1);
+        return add(name, map);
+    }
+
     /**
      * @brief Allocate memory for logging a scalar variable.
      *
@@ -727,6 +732,11 @@ public:
         return add(name, eigen_data);
     }
 
+    bool add(const std::string name, const std::vector<double>& data){
+        Eigen::Map<Eigen::MatrixXd> map((double *)data.data(), (int)data.size(), 1);
+        return add(name, map);
+    }
+
     /**
      * @brief Does the actual work of saving data to disk. Since
      * this is a time-consuming operation, should be done outside of
@@ -750,7 +760,9 @@ public:
         for( auto& pair : _single_var_map ){
 
             int n_dims = 2;
-            std::size_t dims[2] = {pair.second.rows(), pair.second.cols()};
+            std::size_t dims[2];
+            dims[0] = pair.second.rows();
+            dims[1] = pair.second.cols();
 
 
             matvar_t * mat_var = Mat_VarCreate(pair.first.c_str(),
