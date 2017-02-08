@@ -582,7 +582,7 @@ public:
         varinfo.interleave = interleave;
         varinfo.count = -1;
         varinfo.type = VariableType::Scalar;
-        varinfo.data = Eigen::VectorXd::Zero(buffer_size);
+        varinfo.data = Eigen::RowVectorXd::Zero(buffer_size);
         varinfo.rows = 1;
         varinfo.cols = 1;
         varinfo.buffer_capacity = buffer_size;
