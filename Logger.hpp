@@ -693,12 +693,16 @@ public:
             _clog->warning() << " in " << __func__ << "! Variable with name " << name << " has NOT been created yet! This will cause memory allocation!" << _clog->endl();
 
             if( data.cols() == 1 ){
-                createVectorVariable(name, data.size(), 1, -1);
-                return add(name, data);
+                if(createVectorVariable(name, data.size(), 1, -1)){
+                    return add(name, data);
+                }
+                else return false;
             }
             else{
-                createMatrixVariable(name, data.rows(), data.cols(), 1, -1);
-                return add(name, data);
+                if(createMatrixVariable(name, data.rows(), data.cols(), 1, -1)){
+                    return add(name, data);
+                }
+                else return false;
             }
 
         }
