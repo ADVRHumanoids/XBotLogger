@@ -603,6 +603,10 @@ public:
      */
     bool createVectorVariable(std::string name, int size, int interleave = 1, int buffer_size = -1)
     {
+        if( size <= 0 ){
+            return false;
+        }
+
         if( buffer_size < 0 ){
             buffer_size = DEFAULT_BUFFER_SIZE / (size * 8);
         }
@@ -639,6 +643,10 @@ public:
      */
     bool createMatrixVariable(std::string name, int rows, int cols, int interleave = 1, int buffer_size = -1)
     {
+
+        if( rows <= 0 || cols <= 0 ){
+            return false;
+        }
 
         if( buffer_size < 0 ){
             buffer_size = DEFAULT_BUFFER_SIZE / (rows * cols * 8);
