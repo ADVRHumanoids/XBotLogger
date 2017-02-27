@@ -41,6 +41,11 @@
 
 #define M_PREALLOCATION_SIZE 8192
 
+
+
+
+
+
 namespace XBot {
 
 class SSLogger;
@@ -458,6 +463,7 @@ protected: enum class VariableType { Scalar, Vector, Matrix };
 
 protected: struct VariableInfo{
 
+    std::string name;
     int interleave = 1;
     int count = 0;
     VariableType type;
@@ -480,11 +486,19 @@ protected: struct VariableInfo{
             return;
         }
 
-        for( int i = 0; i < (buffer_capacity-tail)*cols; i++ ){
-            auto log = XBot::ConsoleLogger::getLogger();
-            log->info() << "Rearranging data from circular array...be patient! [TBD improve performance]" << log->endl();
-            circshift();
-        }
+        auto log = XBot::ConsoleLogger::getLogger();
+        log->info() << "Data of " << name << " are circ-shifted, rearranging..." << log->endl();
+
+        Eigen::MatrixXd tmp(data.rows(), data.cols());
+        tmp.leftCols(cols*(buffer_capacity-head)) = data.rightCols(cols*(buffer_capacity-head));
+        tmp.rightCols(cols*head) = data.leftCols(cols*head);
+        data = tmp;
+
+//         for( int i = 0; i < (buffer_capacity-tail)*cols; i++ ){
+//             auto log = XBot::ConsoleLogger::getLogger();
+//             log->info() << "Data of " << name << " are circ-shifted, take care!from circular array...be patient! [TBD improve performance]" << log->endl();
+//             circshift();
+//         }
     }
 
 private:
@@ -579,6 +593,7 @@ public:
 
         VariableInfo& varinfo = _var_idx_map.at(name);
 
+        varinfo.name = name;
         varinfo.interleave = interleave;
         varinfo.count = -1;
         varinfo.type = VariableType::Scalar;
@@ -619,6 +634,7 @@ public:
 
         VariableInfo& varinfo = _var_idx_map.at(name);
 
+        varinfo.name = name;
         varinfo.interleave = interleave;
         varinfo.count = 0;
         varinfo.type = VariableType::Vector;
@@ -661,6 +677,7 @@ public:
 
         VariableInfo& varinfo = _var_idx_map.at(name);
 
+        varinfo.name = name;
         varinfo.interleave = interleave;
         varinfo.count = -1;
         varinfo.type = VariableType::Matrix;
@@ -684,7 +701,7 @@ public:
      * @return True if
      */
     template <typename Derived>
-    bool add(const std::string& name, const Eigen::MatrixBase<Derived>& data)
+    bool add(const std::string& name, const Eigen::MatrixBase<Derived>& data, int interleave = 1, int buffer_capacity = -1)
     {
         auto it = _var_idx_map.find(name);
 
@@ -693,13 +710,13 @@ public:
             _clog->warning() << " in " << __func__ << "! Variable with name " << name << " has NOT been created yet! This will cause memory allocation!" << _clog->endl();
 
             if( data.cols() == 1 ){
-                if(createVectorVariable(name, data.size(), 1, -1)){
+                if(createVectorVariable(name, data.size(), interleave, buffer_capacity)){
                     return add(name, data);
                 }
                 else return false;
             }
             else{
-                if(createMatrixVariable(name, data.rows(), data.cols(), 1, -1)){
+                if(createMatrixVariable(name, data.rows(), data.cols(), interleave, buffer_capacity)){
                     return add(name, data);
                 }
                 else return false;
@@ -729,7 +746,7 @@ public:
         }
 
         // write to tail position
-        varinfo.data.block(0,varinfo.tail*varinfo.cols,varinfo.rows,varinfo.cols) = data;
+        varinfo.data.block(0,varinfo.tail*varinfo.cols,varinfo.rows,varinfo.cols) = data.template cast<double>();
         varinfo.empty = false;
 
         // increment tail position
@@ -744,9 +761,32 @@ public:
         return add(name, eigen_data);
     }
 
-    bool add(const std::string name, const std::vector<double>& data){
+    bool add(const std::string& name, const std::vector<double>& data){
         Eigen::Map<Eigen::MatrixXd> map((double *)data.data(), (int)data.size(), 1);
         return add(name, map);
+    }
+
+    template <typename EigenVectorType>
+    bool add(const std::string& name, const std::vector<EigenVectorType>& data){
+
+        if( data.size() == 0 ) return false;
+
+        for( const auto& vec : data ){
+            if(vec.cols() != 1 && vec.size() != data[0].size()){
+                _clog->error() << "in " << __PRETTY_FUNCTION__ << "! All elements of the vector to be logged must be column vectors of the same size!" << _clog->endl();
+                return false;
+            }
+        }
+
+        Eigen::MatrixXd tmp(data[0].size(), data.size());
+
+        int i = 0;
+        for( const auto& vec : data ){
+            tmp.col(i++) = vec;
+        }
+
+        add(name, tmp);
+
     }
 
     /**
