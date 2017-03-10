@@ -766,6 +766,11 @@ public:
         return add(name, map);
     }
 
+    bool add(const std::string& name, const std::vector<int>& data){
+        Eigen::Map< Eigen::MatrixXi> map((int *)data.data(), (int)data.size(), 1);
+        return add(name, map);
+    }
+
     template <typename EigenVectorType>
     bool add(const std::string& name, const std::vector<EigenVectorType>& data){
 
