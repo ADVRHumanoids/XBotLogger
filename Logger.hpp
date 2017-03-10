@@ -582,7 +582,7 @@ public:
     bool createScalarVariable(std::string name, int interleave = 1, int buffer_size = -1)
     {
         if( buffer_size < 0 ){
-            buffer_size = 1024*1024*1024;
+            buffer_size = 1024*1024;
         }
 
         if(_var_idx_map.count(name) || _single_var_map.count(name)){
