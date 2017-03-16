@@ -771,8 +771,44 @@ public:
         return add(name, map);
     }
 
+    template <size_t Size>
+    bool add(const std::string& name, const std::array<double, Size>& data){
+        Eigen::Map<Eigen::MatrixXd> map((double *)data.data(), (int)data.size(), 1);
+        return add(name, map);
+    }
+
+    template <size_t Size>
+    bool add(const std::string& name, const std::array<int, Size>& data){
+        Eigen::Map< Eigen::MatrixXi> map((int *)data.data(), (int)data.size(), 1);
+        return add(name, map);
+    }
+
     template <typename EigenVectorType>
     bool add(const std::string& name, const std::vector<EigenVectorType>& data){
+
+        if( data.size() == 0 ) return false;
+
+        for( const auto& vec : data ){
+            if(vec.cols() != 1 && vec.size() != data[0].size()){
+                _clog->error() << "in " << __PRETTY_FUNCTION__ << "! All elements of the vector to be logged must be column vectors of the same size!" << _clog->endl();
+                return false;
+            }
+        }
+
+        Eigen::MatrixXd tmp(data[0].size(), data.size());
+
+        int i = 0;
+        for( const auto& vec : data ){
+            tmp.col(i++) = vec;
+        }
+
+        add(name, tmp);
+
+    }
+
+
+    template <typename EigenVectorType, size_t Size>
+    bool add(const std::string& name, const std::array<EigenVectorType, Size>& data){
 
         if( data.size() == 0 ) return false;
 
@@ -816,6 +852,8 @@ public:
 
         for( auto& pair : _single_var_map ){
 
+            _clog->info() << "Writing variable " << pair.first << " to mat file..." << _clog->endl();
+
             int n_dims = 2;
             std::size_t dims[2];
             dims[0] = pair.second.rows();
@@ -836,6 +874,8 @@ public:
         }
 
         for( auto& pair : _var_idx_map ){
+
+            _clog->info() << "Writing variable " << pair.first << " to mat file..." << _clog->endl();
 
             VariableInfo& varinfo = pair.second;
 
@@ -867,6 +907,8 @@ public:
             Mat_VarFree(mat_var);
 
         }
+
+        _clog->info() << "Flushing to " << _file_name << " complete!" << _clog->endl();
 
 
 
