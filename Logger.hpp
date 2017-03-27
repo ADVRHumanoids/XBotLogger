@@ -707,7 +707,7 @@ public:
 
         if( it == _var_idx_map.end() ){
 
-            _clog->warning() << " in " << __func__ << "! Variable with name " << name << " has NOT been created yet! This will cause memory allocation!" << _clog->endl();
+            std::cout << " in " << __func__ << "! Variable with name " << name << " has NOT been created yet! This will cause memory allocation!" << std::endl;
 
             if( data.cols() == 1 ){
                 if(createVectorVariable(name, data.size(), interleave, buffer_capacity)){
@@ -727,7 +727,7 @@ public:
         VariableInfo& varinfo = it->second;
 
         if( data.rows() != varinfo.rows || data.cols() != varinfo.cols ){
-            _clog->warning() << " in " << __func__ << "! Provided data has unmatching dimensions!" << _clog->endl();
+            std::cout << " in " << __func__ << "! Provided data has unmatching dimensions!" << std::endl;
             return false;
         }
 
@@ -790,7 +790,7 @@ public:
 
         for( const auto& vec : data ){
             if(vec.cols() != 1 && vec.size() != data[0].size()){
-                _clog->error() << "in " << __PRETTY_FUNCTION__ << "! All elements of the vector to be logged must be column vectors of the same size!" << _clog->endl();
+                std::cout << "in " << __PRETTY_FUNCTION__ << "! All elements of the vector to be logged must be column vectors of the same size!" << std::endl;
                 return false;
             }
         }
@@ -814,7 +814,7 @@ public:
 
         for( const auto& vec : data ){
             if(vec.cols() != 1 && vec.size() != data[0].size()){
-                _clog->error() << "in " << __PRETTY_FUNCTION__ << "! All elements of the vector to be logged must be column vectors of the same size!" << _clog->endl();
+                std::cout << "in " << __PRETTY_FUNCTION__ << "! All elements of the vector to be logged must be column vectors of the same size!" << std::endl;
                 return false;
             }
         }
@@ -847,12 +847,12 @@ public:
         mat_t * mat_file = Mat_CreateVer(_file_name.c_str(), nullptr, MAT_FT_MAT73);
 
         if(!mat_file){
-            _clog->error() << "ERROR creating MAT file!" << _clog->endl();
+            std::cout << "ERROR creating MAT file!" << std::endl;
         }
 
         for( auto& pair : _single_var_map ){
 
-            _clog->info() << "Writing variable " << pair.first << " to mat file..." << _clog->endl();
+            std::cout << "Writing variable " << pair.first << " to mat file..." << std::endl;
 
             int n_dims = 2;
             std::size_t dims[2];
@@ -875,7 +875,7 @@ public:
 
         for( auto& pair : _var_idx_map ){
 
-            _clog->info() << "Writing variable " << pair.first << " to mat file..." << _clog->endl();
+            std::cout << "Writing variable " << pair.first << " to mat file..." << std::endl;
 
             VariableInfo& varinfo = pair.second;
 
@@ -908,7 +908,7 @@ public:
 
         }
 
-        _clog->info() << "Flushing to " << _file_name << " complete!" << _clog->endl();
+        std::cout << "Flushing to " << _file_name << " complete!" << std::endl;
 
 
 
@@ -922,7 +922,7 @@ public:
 protected:
 
     MatLogger(std::string file_name):
-        _clog(ConsoleLogger::getLogger()),
+//         _clog(ConsoleLogger::getLogger()),
         _flushed(false)
     {
         // retrieve time
@@ -950,7 +950,7 @@ protected:
 private:
 
     static std::unordered_map<std::string, Ptr> _instances;
-    ConsoleLogger::Ptr _clog;
+//     ConsoleLogger::Ptr _clog;
     bool _flushed;
 
 };
