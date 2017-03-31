@@ -844,7 +844,7 @@ public:
 
         std::cout << "Dumping data to mat file " << _file_name << std::endl;
 
-        mat_t * mat_file = Mat_CreateVer(_file_name.c_str(), nullptr, MAT_FT_MAT73);
+        mat_t * mat_file = Mat_CreateVer(_file_name.c_str(), nullptr, MAT_FT_MAT5);
 
         if(!mat_file){
             _clog->error() << "ERROR creating MAT file!" << _clog->endl();
@@ -868,7 +868,7 @@ public:
                                                (void *)pair.second.data(),
                                                0 );
 
-            Mat_VarWrite(mat_file, mat_var, MAT_COMPRESSION_ZLIB);
+            Mat_VarWrite(mat_file, mat_var, MAT_COMPRESSION_NONE);
             Mat_VarFree(mat_var);
 
         }
