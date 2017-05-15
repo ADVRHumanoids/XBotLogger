@@ -487,12 +487,12 @@ protected: struct VariableInfo{
         }
 
         auto log = XBot::ConsoleLogger::getLogger();
-        log->info() << "Data of " << name << " are circ-shifted, rearranging..." << log->endl();
+        log->info() << "Data of " << name << " are circ-shifted, take care while reading it..." << log->endl();
 
-        Eigen::MatrixXd tmp(data.rows(), data.cols());
-        tmp.leftCols(cols*(buffer_capacity-head)) = data.rightCols(cols*(buffer_capacity-head));
-        tmp.rightCols(cols*head) = data.leftCols(cols*head);
-        data = tmp;
+//         Eigen::MatrixXd tmp(data.rows(), data.cols());
+//         tmp.leftCols(cols*(buffer_capacity-head)) = data.rightCols(cols*(buffer_capacity-head));
+//         tmp.rightCols(cols*head) = data.leftCols(cols*head);
+//         data = tmp;
 
 //         for( int i = 0; i < (buffer_capacity-tail)*cols; i++ ){
 //             auto log = XBot::ConsoleLogger::getLogger();
@@ -879,7 +879,7 @@ public:
 
             VariableInfo& varinfo = pair.second;
 
-//             varinfo.rearrange();
+            varinfo.rearrange();
 
             int n_dims = 2;
             std::size_t dims[3];
