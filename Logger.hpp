@@ -879,7 +879,7 @@ public:
 
             VariableInfo& varinfo = pair.second;
 
-            varinfo.rearrange();
+            //varinfo.rearrange();
 
             int n_dims = 2;
             std::size_t dims[3];
