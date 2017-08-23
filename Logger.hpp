@@ -754,37 +754,37 @@ public:
 
     }
 
-    bool add(const std::string& name, double data)
+    bool add(const std::string& name, double data, int interleave = 1, int buffer_capacity = -1)
     {
         Eigen::Matrix<double, 1, 1> eigen_data;
         eigen_data(0) = data;
-        return add(name, eigen_data);
+        return add(name, eigen_data, interleave, buffer_capacity);
     }
 
-    bool add(const std::string& name, const std::vector<double>& data){
+    bool add(const std::string& name, const std::vector<double>& data, int interleave = 1, int buffer_capacity = -1){
         Eigen::Map<Eigen::MatrixXd> map((double *)data.data(), (int)data.size(), 1);
-        return add(name, map);
+        return add(name, map, interleave, buffer_capacity);
     }
 
-    bool add(const std::string& name, const std::vector<int>& data){
+    bool add(const std::string& name, const std::vector<int>& data, int interleave = 1, int buffer_capacity = -1){
         Eigen::Map< Eigen::MatrixXi> map((int *)data.data(), (int)data.size(), 1);
-        return add(name, map);
+        return add(name, map, interleave, buffer_capacity);
     }
 
     template <size_t Size>
-    bool add(const std::string& name, const std::array<double, Size>& data){
+    bool add(const std::string& name, const std::array<double, Size>& data, int interleave = 1, int buffer_capacity = -1){
         Eigen::Map<Eigen::MatrixXd> map((double *)data.data(), (int)data.size(), 1);
-        return add(name, map);
+        return add(name, map, interleave, buffer_capacity);
     }
 
     template <size_t Size>
-    bool add(const std::string& name, const std::array<int, Size>& data){
+    bool add(const std::string& name, const std::array<int, Size>& data, int interleave = 1, int buffer_capacity = -1){
         Eigen::Map< Eigen::MatrixXi> map((int *)data.data(), (int)data.size(), 1);
-        return add(name, map);
+        return add(name, map, interleave, buffer_capacity);
     }
 
     template <typename EigenVectorType>
-    bool add(const std::string& name, const std::vector<EigenVectorType>& data){
+    bool add(const std::string& name, const std::vector<EigenVectorType>& data, int interleave = 1, int buffer_capacity = -1){
 
         if( data.size() == 0 ) return false;
 
@@ -802,13 +802,13 @@ public:
             tmp.col(i++) = vec;
         }
 
-        add(name, tmp);
+        add(name, tmp, interleave, buffer_capacity);
 
     }
 
 
     template <typename EigenVectorType, size_t Size>
-    bool add(const std::string& name, const std::array<EigenVectorType, Size>& data){
+    bool add(const std::string& name, const std::array<EigenVectorType, Size>& data, int interleave = 1, int buffer_capacity = -1){
 
         if( data.size() == 0 ) return false;
 
@@ -826,7 +826,7 @@ public:
             tmp.col(i++) = vec;
         }
 
-        add(name, tmp);
+        add(name, tmp, interleave, buffer_capacity);
 
     }
 
