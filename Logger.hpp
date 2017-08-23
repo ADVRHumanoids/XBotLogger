@@ -888,11 +888,11 @@ public:
                 n_dims = 3;
                 dims[0] = varinfo.rows;
                 dims[1] = varinfo.cols;
-                dims[2] = varinfo.data.cols()/varinfo.cols;
+                dims[2] = (varinfo.tail > varinfo.head || varinfo.empty) ? (varinfo.tail-varinfo.head) : varinfo.data.cols()/varinfo.cols;
             }
             else{
                 dims[0] = varinfo.data.rows();
-                dims[1] = varinfo.data.cols();
+                dims[1] = (varinfo.tail > varinfo.head || varinfo.empty) ? (varinfo.tail-varinfo.head) : varinfo.data.cols();
             }
 
             matvar_t * mat_var = Mat_VarCreate(pair.first.c_str(),
