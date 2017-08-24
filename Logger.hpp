@@ -868,7 +868,7 @@ public:
                                                (void *)pair.second.data(),
                                                0 );
 
-            Mat_VarWrite(mat_file, mat_var, MAT_COMPRESSION_NONE);
+            Mat_VarWrite(mat_file, mat_var, MAT_COMPRESSION_ZLIB);
             Mat_VarFree(mat_var);
 
         }
@@ -879,7 +879,7 @@ public:
 
             VariableInfo& varinfo = pair.second;
 
-            //varinfo.rearrange();
+            varinfo.rearrange();
 
             int n_dims = 2;
             std::size_t dims[3];
