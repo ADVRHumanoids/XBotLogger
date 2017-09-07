@@ -727,7 +727,9 @@ public:
         VariableInfo& varinfo = it->second;
 
         if( data.rows() != varinfo.rows || data.cols() != varinfo.cols ){
-            std::cout << " in " << __func__ << "! Provided data has unmatching dimensions!" << std::endl;
+            std::cout << " in " << __func__ << "! Provided data for variable " << name << " has unmatching dimensions!" << std::endl;
+            std::cout << "Rows: " << data.rows() <<" != " << varinfo.rows<< std::endl;
+            std::cout << "Columns: " << data.cols() <<" != " << varinfo.cols<< std::endl;
             return false;
         }
 
@@ -879,7 +881,7 @@ public:
 
             VariableInfo& varinfo = pair.second;
 
-            varinfo.rearrange();
+//             varinfo.rearrange();
 
             int n_dims = 2;
             std::size_t dims[3];
