@@ -1,3 +1,22 @@
+/*
+ * Copyright (C) 2017 IIT-ADVR
+ * Author: Arturo Laurenzi, Luca Muratore
+ * email:  arturo.laurenzi@iit.it, luca.muratore@iit.it
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
+*/
+
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/array.hpp>
 #include <iostream>
@@ -29,7 +48,26 @@
 
 namespace XBot { namespace experimental {
     
+    /* Modifiers */
+    std::ostream& bold_on(std::ostream& os);
+
+    std::ostream& bold_off(std::ostream& os);
+    
+    std::ostream& color_green(std::ostream& os);
+    
+    std::ostream& color_red(std::ostream& os);
+    
+    std::ostream& color_yellow(std::ostream& os);
+    
+    std::ostream& color_reset(std::ostream& os);
+    
+    /**
+     * @brief Forward declaration for Logger
+     * 
+     */
     class Logger;
+    
+    
     
     /**
      * @brief Class handling the flushing of log messages to console.
@@ -50,6 +88,59 @@ namespace XBot { namespace experimental {
         void print();
         
     };
+    
+    
+    
+    class Logger {
+        
+    public:
+        
+        enum class Severity { LOW = 0, MID = 1, HIGH = 2 };
+        
+        friend class Endl;
+        
+        static std::ostream& log(Severity s = Severity::HIGH);
+        
+        static std::ostream& info(Severity s = Severity::HIGH);
+        
+        static std::ostream& error(Severity s = Severity::HIGH);
+        
+        static std::ostream& warning(Severity s = Severity::HIGH);
+        
+        static std::ostream& success(Severity s = Severity::HIGH);
+        
+        static Endl& endl();
+        
+        static void SetVerbosityLevel(Severity s);
+        
+    protected:
+        
+    private:
+        
+        typedef boost::iostreams::stream<boost::iostreams::array_sink> IoStream;
+        
+        Logger() = delete;
+        
+        static void print();
+        
+        static const int BUFFER_SIZE = 4096;
+        
+        static char _buffer[BUFFER_SIZE];
+        
+        static IoStream _sink;
+        
+        static Endl _endl;
+        
+        static Severity _severity;
+        static Severity _verbosity_level;
+        
+    };
+    
+    char Logger::_buffer[Logger::BUFFER_SIZE];
+    Logger::IoStream Logger::_sink;
+    Endl Logger::_endl;
+    Logger::Severity Logger::_severity = Logger::Severity::HIGH;
+    Logger::Severity Logger::_verbosity_level = Logger::Severity::LOW;
     
     std::ostream& bold_on(std::ostream& os)
     {
@@ -81,72 +172,6 @@ namespace XBot { namespace experimental {
         return os << RT_LOG_RESET;
     }
     
-    
-    
-    class Logger {
-        
-    public:
-        
-        typedef boost::iostreams::stream<boost::iostreams::array_sink> IoStream;
-        
-        friend class Endl;
-        
-        static std::ostream& info() 
-        {
-            memset(_buffer, 0, BUFFER_SIZE);
-            _sink.open(_buffer);
-            _sink << bold_on << "[INFO] " << bold_off;
-            return _sink;
-        };
-        
-        static std::ostream& error() 
-        {
-            memset(_buffer, 0, BUFFER_SIZE);
-            _sink.open(_buffer);
-            _sink << bold_on << color_red << "[ERROR] " << bold_off << color_red;
-            return _sink;
-        };
-        
-        static std::ostream& warning() 
-        {
-            memset(_buffer, 0, BUFFER_SIZE);
-            _sink.open(_buffer);
-            _sink << bold_on << color_yellow << "[WARNING] " << bold_off << color_yellow;
-            return _sink;
-        };
-        
-        static std::ostream& success() 
-        {
-            memset(_buffer, 0, BUFFER_SIZE);
-            _sink.open(_buffer);
-            _sink << bold_on << color_green << "[OK] " << bold_off << color_green;
-            return _sink;
-        };
-        
-        static Endl& endl() { return _endl; }
-        
-    protected:
-        
-    private:
-        
-        Logger() = delete;
-        
-        static void print();
-        
-        static const int BUFFER_SIZE = 4096;
-        
-        static char _buffer[BUFFER_SIZE];
-        
-        static IoStream _sink;
-        
-        static Endl _endl;
-        
-    };
-    
-    char Logger::_buffer[Logger::BUFFER_SIZE];
-    Logger::IoStream Logger::_sink;
-    Endl Logger::_endl;
-    
     void operator<< ( std::ostream& os, Endl& endl )
     {
         endl.print();
@@ -159,11 +184,74 @@ namespace XBot { namespace experimental {
     
     void Logger::print()
     {
-        _sink << color_reset;
-        DPRINTF("%s\n", _buffer);
+
+        if( (int)_severity >= (int)_verbosity_level ){
+            
+            _sink << color_reset;
+            DPRINTF("%s\n", _buffer);
+            
+        }
+        
         _sink.close();
     }
     
+    
+    std::ostream& Logger::log(Logger::Severity s)
+    {
+        _severity = s;
+        
+        memset(_buffer, 0, BUFFER_SIZE);
+        _sink.open(_buffer);
+        return _sink;
+    }
+    
+    std::ostream& Logger::info(Logger::Severity s) 
+    {
+        _severity = s;
+        
+        memset(_buffer, 0, BUFFER_SIZE);
+        _sink.open(_buffer);
+        _sink << bold_on << "[INFO] " << bold_off;
+        return _sink;
+    };
+    
+    std::ostream& Logger::error(Logger::Severity s) 
+    {
+        _severity = s;
+        
+        memset(_buffer, 0, BUFFER_SIZE);
+        _sink.open(_buffer);
+        _sink << bold_on << color_red << "[ERROR] " << bold_off << color_red;
+        return _sink;
+    };
+    
+    std::ostream& Logger::warning(Logger::Severity s) 
+    {
+        _severity = s;
+        
+        memset(_buffer, 0, BUFFER_SIZE);
+        _sink.open(_buffer);
+        _sink << bold_on << color_yellow << "[WARNING] " << bold_off << color_yellow;
+        return _sink;
+    };
+    
+    std::ostream& Logger::success(Logger::Severity s) 
+    {
+        _severity = s;
+        
+        memset(_buffer, 0, BUFFER_SIZE);
+        _sink.open(_buffer);
+        _sink << bold_on << color_green << "[OK] " << bold_off << color_green;
+        return _sink;
+    };
+    
+    Endl& Logger::endl() { return _endl; }
+    
+
+    void Logger::SetVerbosityLevel(Logger::Severity s)
+    {
+        _verbosity_level = s;
+    }
 
     
     
