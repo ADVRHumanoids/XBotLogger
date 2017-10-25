@@ -45,11 +45,9 @@ namespace XBot { namespace experimental {
         
     private:
         
-        Endl(Logger& logger): _logger(logger) {}
+        Endl() = default;
         
         void print();
-        
-        Logger& _logger;
         
     };
     
@@ -93,13 +91,7 @@ namespace XBot { namespace experimental {
         
         friend class Endl;
         
-        Logger(): 
-            _endl(*this) 
-        {
-           
-        }
-        
-        std::ostream& info() 
+        static std::ostream& info() 
         {
             memset(_buffer, 0, BUFFER_SIZE);
             _sink.open(_buffer);
@@ -107,7 +99,7 @@ namespace XBot { namespace experimental {
             return _sink;
         };
         
-        std::ostream& error() 
+        static std::ostream& error() 
         {
             memset(_buffer, 0, BUFFER_SIZE);
             _sink.open(_buffer);
@@ -115,7 +107,7 @@ namespace XBot { namespace experimental {
             return _sink;
         };
         
-        std::ostream& warning() 
+        static std::ostream& warning() 
         {
             memset(_buffer, 0, BUFFER_SIZE);
             _sink.open(_buffer);
@@ -123,7 +115,7 @@ namespace XBot { namespace experimental {
             return _sink;
         };
         
-        std::ostream& success() 
+        static std::ostream& success() 
         {
             memset(_buffer, 0, BUFFER_SIZE);
             _sink.open(_buffer);
@@ -131,23 +123,29 @@ namespace XBot { namespace experimental {
             return _sink;
         };
         
-        Endl& endl() { return _endl; }
+        static Endl& endl() { return _endl; }
         
     protected:
         
     private:
         
-        void print();
+        Logger() = delete;
+        
+        static void print();
         
         static const int BUFFER_SIZE = 4096;
         
-        char _buffer[BUFFER_SIZE];
+        static char _buffer[BUFFER_SIZE];
         
-        IoStream _sink;
+        static IoStream _sink;
         
-        Endl _endl;
+        static Endl _endl;
         
     };
+    
+    char Logger::_buffer[Logger::BUFFER_SIZE];
+    Logger::IoStream Logger::_sink;
+    Endl Logger::_endl;
     
     void operator<< ( std::ostream& os, Endl& endl )
     {
@@ -156,7 +154,7 @@ namespace XBot { namespace experimental {
     
     void Endl::print()
     {
-        _logger.print();
+        Logger::print();
     }
     
     void Logger::print()
@@ -165,6 +163,7 @@ namespace XBot { namespace experimental {
         DPRINTF("%s\n", _buffer);
         _sink.close();
     }
+    
 
     
     
