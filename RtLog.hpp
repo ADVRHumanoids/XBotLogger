@@ -99,15 +99,15 @@ namespace XBot { namespace experimental {
         
         friend class Endl;
         
-        static std::ostream& log(Severity s = Severity::HIGH);
+        static std::ostream& log(Severity s = Severity::LOW);
         
-        static std::ostream& info(Severity s = Severity::HIGH);
+        static std::ostream& info(Severity s = Severity::LOW);
         
         static std::ostream& error(Severity s = Severity::HIGH);
         
-        static std::ostream& warning(Severity s = Severity::HIGH);
+        static std::ostream& warning(Severity s = Severity::MID);
         
-        static std::ostream& success(Severity s = Severity::HIGH);
+        static std::ostream& success(Severity s = Severity::LOW);
         
         static Endl& endl();
         
