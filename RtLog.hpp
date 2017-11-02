@@ -99,18 +99,63 @@ namespace XBot { namespace experimental {
         
         friend class Endl;
         
+        /**
+         * @brief Logs a message without any header or special formatting.
+         * 
+         * @param s Message severity. Defaults to LOW.
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
         static std::ostream& log(Severity s = Severity::LOW);
         
+        /**
+         * @brief Logs an information message (with bold [INFO] header).
+         * 
+         * @param s Message severity. Defaults to LOW.
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
         static std::ostream& info(Severity s = Severity::LOW);
         
+        /**
+         * @brief Logs an error message (in red, with bold [ERROR] header).
+         * 
+         * @param s Message severity. Defaults to HIGH.
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
         static std::ostream& error(Severity s = Severity::HIGH);
         
+        /**
+         * @brief Logs a warning message (in yellow, with bold [WARNING] header).
+         * 
+         * @param s Message severity. Defaults to MEDIUM.
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
         static std::ostream& warning(Severity s = Severity::MID);
         
+        /**
+         * @brief Logs a success message (in green, with bold [OK] header).
+         * 
+         * @param s Message severity. Defaults to LOW.
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
         static std::ostream& success(Severity s = Severity::LOW);
         
+        /**
+         * @brief Logs a message that is printed only in debug mode (or whenever NDEBUG is not defined)
+         * 
+         * @param s Message severity. Defaults to LOW.
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
+        static std::ostream& debug(Severity s = Severity::LOW);
+        
+        /**
+         * @brief Closes the message and prints to screen.
+         */
         static Endl& endl();
         
+        /**
+         * @brief Sets the global verbosity level, i.e. the minimum severity that a message must have
+         * in order to actually be printed.
+         */
         static void SetVerbosityLevel(Severity s);
         
     protected:
@@ -123,6 +168,8 @@ namespace XBot { namespace experimental {
         
         static void print();
         
+        static void init_sink();
+        
         static const int BUFFER_SIZE = 4096;
         
         static char _buffer[BUFFER_SIZE];
@@ -133,6 +180,7 @@ namespace XBot { namespace experimental {
         
         static Severity _severity;
         static Severity _verbosity_level;
+        static bool _debug_only;
         
     };
     
@@ -141,6 +189,7 @@ namespace XBot { namespace experimental {
     Endl Logger::_endl;
     Logger::Severity Logger::_severity = Logger::Severity::HIGH;
     Logger::Severity Logger::_verbosity_level = Logger::Severity::LOW;
+    bool Logger::_debug_only = false;
     
     std::ostream& bold_on(std::ostream& os)
     {
@@ -172,6 +221,13 @@ namespace XBot { namespace experimental {
         return os << RT_LOG_RESET;
     }
     
+    void Logger::init_sink()
+    {
+        memset(_buffer, 0, BUFFER_SIZE);
+        _sink.open(_buffer);
+    }
+
+    
     void operator<< ( std::ostream& os, Endl& endl )
     {
         endl.print();
@@ -188,7 +244,15 @@ namespace XBot { namespace experimental {
         if( (int)_severity >= (int)_verbosity_level ){
             
             _sink << color_reset;
-            DPRINTF("%s\n", _buffer);
+            
+            if(_debug_only){
+#ifndef NDEBUG
+                DPRINTF("%s\n", _buffer);
+#endif
+            }
+            else{
+                DPRINTF("%s\n", _buffer);
+            }
             
         }
         
@@ -199,18 +263,18 @@ namespace XBot { namespace experimental {
     std::ostream& Logger::log(Logger::Severity s)
     {
         _severity = s;
+        _debug_only = false;
         
-        memset(_buffer, 0, BUFFER_SIZE);
-        _sink.open(_buffer);
+        init_sink();
         return _sink;
     }
     
     std::ostream& Logger::info(Logger::Severity s) 
     {
         _severity = s;
+        _debug_only = false;
         
-        memset(_buffer, 0, BUFFER_SIZE);
-        _sink.open(_buffer);
+        init_sink();
         _sink << bold_on << "[INFO] " << bold_off;
         return _sink;
     };
@@ -218,9 +282,9 @@ namespace XBot { namespace experimental {
     std::ostream& Logger::error(Logger::Severity s) 
     {
         _severity = s;
+        _debug_only = false;
         
-        memset(_buffer, 0, BUFFER_SIZE);
-        _sink.open(_buffer);
+        init_sink();
         _sink << bold_on << color_red << "[ERROR] " << bold_off << color_red;
         return _sink;
     };
@@ -228,9 +292,9 @@ namespace XBot { namespace experimental {
     std::ostream& Logger::warning(Logger::Severity s) 
     {
         _severity = s;
+        _debug_only = false;
         
-        memset(_buffer, 0, BUFFER_SIZE);
-        _sink.open(_buffer);
+        init_sink();
         _sink << bold_on << color_yellow << "[WARNING] " << bold_off << color_yellow;
         return _sink;
     };
@@ -238,12 +302,23 @@ namespace XBot { namespace experimental {
     std::ostream& Logger::success(Logger::Severity s) 
     {
         _severity = s;
+        _debug_only = false;
         
-        memset(_buffer, 0, BUFFER_SIZE);
-        _sink.open(_buffer);
+        init_sink();
         _sink << bold_on << color_green << "[OK] " << bold_off << color_green;
         return _sink;
     };
+    
+    std::ostream& Logger::debug(Logger::Severity s)
+    {
+        _severity = s;
+        _debug_only = true;
+        
+        init_sink();
+        _sink << "[DEBUG] ";
+        return _sink;
+    }
+
     
     Endl& Logger::endl() { return _endl; }
     
