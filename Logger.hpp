@@ -37,6 +37,8 @@
 
 #include <matio.h>
 
+#include <XBotInterface/RtLog.hpp>
+
 #define ASYNC_QUEUE_SIZE_BIT 65536
 
 #define M_PREALLOCATION_SIZE 8192
@@ -313,7 +315,7 @@ private:
 };
 
 
-class Logger {
+class LoggerBase {
 
 public:
 
@@ -364,7 +366,7 @@ protected:
 
 };
 
-class FileLogger : public Logger {
+class FileLogger : public LoggerBase {
 
 public:
 
@@ -401,7 +403,7 @@ private:
 };
 
 
-class ConsoleLogger : public Logger {
+class ConsoleLogger : public LoggerBase {
 
 public:
 
@@ -486,8 +488,7 @@ protected: struct VariableInfo{
             return;
         }
 
-        auto log = XBot::ConsoleLogger::getLogger();
-        log->info() << "Data of " << name << " are circ-shifted, take care while reading it..." << log->endl();
+        Logger::warning() << "Data of " << name << " are circ-shifted, take care while reading it" << Logger::endl();
 
 //         Eigen::MatrixXd tmp(data.rows(), data.cols());
 //         tmp.leftCols(cols*(buffer_capacity-head)) = data.rightCols(cols*(buffer_capacity-head));
@@ -707,8 +708,6 @@ public:
 
         if( it == _var_idx_map.end() ){
 
-            std::cout << " in " << __func__ << "! Variable with name " << name << " has NOT been created yet! This will cause memory allocation!" << std::endl;
-
             if( data.cols() == 1 ){
                 if(createVectorVariable(name, data.size(), interleave, buffer_capacity)){
                     return add(name, data);
@@ -727,9 +726,9 @@ public:
         VariableInfo& varinfo = it->second;
 
         if( data.rows() != varinfo.rows || data.cols() != varinfo.cols ){
-            std::cout << " in " << __func__ << "! Provided data for variable " << name << " has unmatching dimensions!" << std::endl;
-            std::cout << "Rows: " << data.rows() <<" != " << varinfo.rows<< std::endl;
-            std::cout << "Columns: " << data.cols() <<" != " << varinfo.cols<< std::endl;
+            Logger::warning() << " in " << __func__ << "! Provided data for variable " << name << " has unmatching dimensions!\n"
+             << "Rows: " << data.rows() << " != " << varinfo.rows << "\n"
+             << "Columns: " << data.cols() <<" != " << varinfo.cols<< Logger::endl();
             return false;
         }
 
@@ -844,7 +843,7 @@ public:
 
         _flushed = true;
 
-        std::cout << "Dumping data to mat file " << _file_name << std::endl;
+        Logger::info(Logger::Severity::HIGH) << "Dumping data to mat file " << _file_name << Logger::endl();
 
         mat_t * mat_file = Mat_CreateVer(_file_name.c_str(), nullptr, MAT_FT_MAT5);
 
@@ -854,7 +853,7 @@ public:
 
         for( auto& pair : _single_var_map ){
 
-            std::cout << "Writing variable " << pair.first << " to mat file..." << std::endl;
+            Logger::info() << "Writing variable " << pair.first << " to mat file..." << Logger::endl();
 
             int n_dims = 2;
             std::size_t dims[2];
@@ -877,7 +876,7 @@ public:
 
         for( auto& pair : _var_idx_map ){
 
-            std::cout << "Writing variable " << pair.first << " to mat file..." << std::endl;
+            Logger::info() << "Writing variable " << pair.first << " to mat file..." << Logger::endl();
 
             VariableInfo& varinfo = pair.second;
 
@@ -910,7 +909,7 @@ public:
 
         }
 
-        std::cout << "Flushing to " << _file_name << " complete!" << std::endl;
+        Logger::success() << "Flushing to " << _file_name << " complete!" << Logger::endl();
 
 
 
@@ -936,7 +935,6 @@ protected:
         timeinfo = localtime (&rawtime);
 
         strftime(buffer,80,"__%Y_%m_%d__%H_%M_%S.mat",timeinfo);
-        puts (buffer);
 
         // rotating file logger
         std::string file_name_extended;

@@ -17,6 +17,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>
 */
 
+#ifndef __XBOT_RT_LOGGER_HPP__
+#define __XBOT_RT_LOGGER_HPP__
+
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/array.hpp>
 #include <iostream>
@@ -158,6 +161,12 @@ namespace XBot {
          */
         static void SetVerbosityLevel(Severity s);
         
+        /**
+         * @brief Sets the global verbosity level, i.e. the minimum severity that a message must have
+         * in order to actually be printed.
+         */
+        static Severity GetVerbosityLevel();
+        
     protected:
         
     private:
@@ -208,3 +217,6 @@ namespace XBot {
 
 
 } 
+
+
+#endif

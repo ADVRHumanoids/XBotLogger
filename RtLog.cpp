@@ -125,4 +125,12 @@ namespace XBot {
         _verbosity_level = s;
     }
     
+    Logger::Severity XBot::Logger::GetVerbosityLevel()
+    {   
+        
+        return _verbosity_level;
+
+    }
+
+    
 }
