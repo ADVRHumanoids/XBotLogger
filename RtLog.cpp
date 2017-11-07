@@ -2,12 +2,56 @@
 
 namespace XBot {
     
-    char Logger::_buffer[Logger::BUFFER_SIZE];
-    Logger::IoStream Logger::_sink;
-    Endl Logger::_endl;
-    Logger::Severity Logger::_severity = Logger::Severity::HIGH;
-    Logger::Severity Logger::_verbosity_level = Logger::Severity::LOW;
-    bool Logger::_debug_only = false;
+    LoggerClass Logger::_logger("");
+    
+        
+    std::ostream& Logger::debug(Logger::Severity s)
+    {
+        return _logger.debug(s);
+    }
+
+    std::ostream& Logger::error(Logger::Severity s)
+    {
+        return _logger.error(s);
+    }
+
+
+    Endl& Logger::endl()
+    {
+        return _logger.endl();
+    }
+
+    std::ostream& Logger::info(Logger::Severity s)
+    {
+        return _logger.info(s);
+    }
+
+    std::ostream& Logger::log()
+    {
+        return _logger.log();
+    }
+
+
+    void Logger::SetVerbosityLevel(Logger::Severity s)
+    {
+        _logger.setVerbosityLevel(s);
+    }
+
+    std::ostream& Logger::success(Logger::Severity s)
+    {
+        return _logger.success(s);
+    }
+
+    std::ostream& Logger::warning(Logger::Severity s)
+    {
+        return _logger.warning(s);
+    }
+
+    Logger::Severity Logger::GetVerbosityLevel()
+    {
+        return _logger.getVerbosityLevel();
+    }
+
     
     std::ostream& bold_on(std::ostream& os)
     {
@@ -39,7 +83,28 @@ namespace XBot {
         return os << RT_LOG_RESET;
     }
     
-    void Logger::init_sink()
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /* LoggerClass impl */
+    
+    LoggerClass::LoggerClass(std::string name):
+        _endl(*this),
+        _name(name)
+    {
+        if(_name != ""){
+            _name_tag = " (" + name + ")";
+        }
+        
+    }
+    
+    void LoggerClass::init_sink()
     {
         memset(_buffer, 0, BUFFER_SIZE);
         _sink.open(_buffer);
@@ -53,84 +118,102 @@ namespace XBot {
     
     void Endl::print()
     {
-        Logger::print();
+        _logger_handle.print();
     }
     
     
-    std::ostream& Logger::log(Logger::Severity s)
+    std::ostream& LoggerClass::log()
     {
-        _severity = s;
-        _debug_only = false;
-        
-        init_sink();
+        if(!_sink.is_open()){
+            init_sink();
+        }
         return _sink;
     }
     
-    std::ostream& Logger::info(Logger::Severity s) 
+    std::ostream& LoggerClass::info(Logger::Severity s) 
     {
         _severity = s;
-        _debug_only = false;
         
         init_sink();
-        _sink << bold_on << "[INFO] " << bold_off;
+        _sink << bold_on << "[info" << _name_tag << "] " << bold_off;
         return _sink;
     };
     
-    std::ostream& Logger::error(Logger::Severity s) 
+    std::ostream& LoggerClass::error(Logger::Severity s) 
     {
         _severity = s;
-        _debug_only = false;
         
         init_sink();
-        _sink << bold_on << color_red << "[ERROR] " << bold_off << color_red;
+        _sink << bold_on << color_red << "[error" << _name_tag << "] " << bold_off << color_red;
         return _sink;
     };
     
-    std::ostream& Logger::warning(Logger::Severity s) 
+    std::ostream& LoggerClass::warning(Logger::Severity s) 
     {
         _severity = s;
-        _debug_only = false;
         
         init_sink();
-        _sink << bold_on << color_yellow << "[WARNING] " << bold_off << color_yellow;
+        _sink << bold_on << color_yellow << "[warning" << _name_tag << "] " << bold_off << color_yellow;
         return _sink;
     };
     
-    std::ostream& Logger::success(Logger::Severity s) 
+    std::ostream& LoggerClass::success(Logger::Severity s) 
     {
         _severity = s;
-        _debug_only = false;
         
         init_sink();
-        _sink << bold_on << color_green << "[OK] " << bold_off << color_green;
+        _sink << bold_on << color_green << "[success" << _name_tag << "] " << bold_off << color_green;
         return _sink;
     };
     
-    std::ostream& Logger::debug(Logger::Severity s)
+    std::ostream& LoggerClass::debug(Logger::Severity s)
     {
         _severity = s;
-        _debug_only = true;
         
         init_sink();
-        _sink << "[DEBUG] ";
+        _sink << "[debug" << _name_tag << "] ";
         return _sink;
     }
 
     
-    Endl& Logger::endl() { return _endl; }
+    Endl& LoggerClass::endl() { return _endl; }
     
 
-    void Logger::SetVerbosityLevel(Logger::Severity s)
+    void LoggerClass::setVerbosityLevel(Logger::Severity s)
     {
         _verbosity_level = s;
     }
     
-    Logger::Severity XBot::Logger::GetVerbosityLevel()
+    Logger::Severity LoggerClass::getVerbosityLevel() const
     {   
         
         return _verbosity_level;
 
     }
+        
+    Endl::Endl(LoggerClass& logger_handle):
+        _logger_handle(logger_handle)
+    {
+
+    }
+    
+    
+    void LoggerClass::print()
+    {
+
+        if( (int)_severity >= (int)_verbosity_level ){
+            
+            _sink << color_reset;
+            
+            print_internal();
+            
+        }
+        
+        _severity = Logger::Severity::HIGH;
+        _sink.close();
+        
+    }
+
 
     
 }

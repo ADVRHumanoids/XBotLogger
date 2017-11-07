@@ -68,7 +68,7 @@ namespace XBot {
      * @brief Forward declaration for Logger
      * 
      */
-    class Logger;
+    class LoggerClass;
     
     
     
@@ -80,13 +80,15 @@ namespace XBot {
         
     public:
         
-        friend class Logger;
+        friend class LoggerClass;
         
         friend void operator<< ( std::ostream& os, Endl& endl );
         
     private:
         
-        Endl() = default;
+        Endl(LoggerClass& logger_handle);
+        
+        LoggerClass& _logger_handle;
         
         void print();
         
@@ -98,17 +100,15 @@ namespace XBot {
         
     public:
         
-        enum class Severity { LOW = 0, MID = 1, HIGH = 2 };
-        
-        friend class Endl;
+        enum class Severity { DEBUG = -1, LOW = 0, MID = 1, HIGH = 2, FATAL = 3 };
         
         /**
-         * @brief Logs a message without any header or special formatting.
+         * @brief Writes to the internal stream with no special formatting and without changing
+         * the severity level (which defaults to HIGH). 
          * 
-         * @param s Message severity. Defaults to LOW.
          * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
          */
-        static std::ostream& log(Severity s = Severity::LOW);
+        static std::ostream& log();
         
         /**
          * @brief Logs an information message (with bold [INFO] header).
@@ -116,7 +116,7 @@ namespace XBot {
          * @param s Message severity. Defaults to LOW.
          * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
          */
-        static std::ostream& info(Severity s = Severity::LOW);
+        static std::ostream& info(Logger::Severity s = Logger::Severity::LOW);
         
         /**
          * @brief Logs an error message (in red, with bold [ERROR] header).
@@ -124,7 +124,7 @@ namespace XBot {
          * @param s Message severity. Defaults to HIGH.
          * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
          */
-        static std::ostream& error(Severity s = Severity::HIGH);
+        static std::ostream& error(Logger::Severity s = Logger::Severity::HIGH);
         
         /**
          * @brief Logs a warning message (in yellow, with bold [WARNING] header).
@@ -132,7 +132,7 @@ namespace XBot {
          * @param s Message severity. Defaults to MEDIUM.
          * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
          */
-        static std::ostream& warning(Severity s = Severity::MID);
+        static std::ostream& warning(Logger::Severity s = Logger::Severity::MID);
         
         /**
          * @brief Logs a success message (in green, with bold [OK] header).
@@ -140,7 +140,7 @@ namespace XBot {
          * @param s Message severity. Defaults to LOW.
          * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
          */
-        static std::ostream& success(Severity s = Severity::LOW);
+        static std::ostream& success(Logger::Severity s = Logger::Severity::LOW);
         
         /**
          * @brief Logs a message that is printed only in debug mode (or whenever NDEBUG is not defined)
@@ -148,7 +148,7 @@ namespace XBot {
          * @param s Message severity. Defaults to LOW.
          * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
          */
-        static std::ostream& debug(Severity s = Severity::LOW);
+        static std::ostream& debug(Logger::Severity s = Logger::Severity::DEBUG);
         
         /**
          * @brief Closes the message and prints to screen.
@@ -159,61 +159,135 @@ namespace XBot {
          * @brief Sets the global verbosity level, i.e. the minimum severity that a message must have
          * in order to actually be printed.
          */
-        static void SetVerbosityLevel(Severity s);
+        static void SetVerbosityLevel(Logger::Severity s);
         
         /**
          * @brief Sets the global verbosity level, i.e. the minimum severity that a message must have
          * in order to actually be printed.
          */
-        static Severity GetVerbosityLevel();
+        static Logger::Severity GetVerbosityLevel();
+
         
     protected:
         
     private:
         
-        typedef boost::iostreams::stream<boost::iostreams::array_sink> IoStream;
-        
         Logger() = delete;
         
-        static void print();
-        
-        static void init_sink();
-        
-        static const int BUFFER_SIZE = 4096;
-        
-        static char _buffer[BUFFER_SIZE];
-        
-        static IoStream _sink;
-        
-        static Endl _endl;
-        
-        static Severity _severity;
-        static Severity _verbosity_level;
-        static bool _debug_only;
+        static LoggerClass _logger;
         
     };
     
     
-    inline void Logger::print()
-    {
-
-        if( (int)_severity >= (int)_verbosity_level ){
-            
-            _sink << color_reset;
-            
-            if(_debug_only){
-#ifndef NDEBUG
-                DPRINTF("%s\n", _buffer);
-#endif
-            }
-            else{
-                DPRINTF("%s\n", _buffer);
-            }
-            
-        }
+    /**
+     * @brief Logger class.
+     * 
+     */
+    class LoggerClass {
         
-        _sink.close();
+    public:
+        
+        friend class Endl;
+        
+        LoggerClass(std::string logger_name);
+        
+        /**
+         * @brief Writes to the internal stream with no special formatting and without changing
+         * the severity level (which defaults to HIGH). 
+         * 
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
+        std::ostream& log();
+        
+        /**
+         * @brief Logs an information message (with bold [INFO] header).
+         * 
+         * @param s Message severity. Defaults to LOW.
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
+        std::ostream& info(Logger::Severity s = Logger::Severity::LOW);
+        
+        /**
+         * @brief Logs an error message (in red, with bold [ERROR] header).
+         * 
+         * @param s Message severity. Defaults to HIGH.
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
+        std::ostream& error(Logger::Severity s = Logger::Severity::HIGH);
+        
+        /**
+         * @brief Logs a warning message (in yellow, with bold [WARNING] header).
+         * 
+         * @param s Message severity. Defaults to MEDIUM.
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
+        std::ostream& warning(Logger::Severity s = Logger::Severity::MID);
+        
+        /**
+         * @brief Logs a success message (in green, with bold [OK] header).
+         * 
+         * @param s Message severity. Defaults to LOW.
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
+        std::ostream& success(Logger::Severity s = Logger::Severity::LOW);
+        
+        /**
+         * @brief Logs a message that is printed only in debug mode (or whenever NDEBUG is not defined)
+         * 
+         * @param s Message severity. Defaults to LOW.
+         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         */
+        std::ostream& debug(Logger::Severity s = Logger::Severity::LOW);
+        
+        /**
+         * @brief Closes the message and prints to screen.
+         */
+        Endl& endl();
+        
+        /**
+         * @brief Sets the global verbosity level, i.e. the minimum severity that a message must have
+         * in order to actually be printed.
+         */
+        void setVerbosityLevel(Logger::Severity s);
+        
+        /**
+         * @brief Sets the global verbosity level, i.e. the minimum severity that a message must have
+         * in order to actually be printed.
+         */
+        Logger::Severity getVerbosityLevel() const;
+        
+    private:
+        
+        typedef boost::iostreams::stream<boost::iostreams::array_sink> IoStream;
+        
+        void print();
+        
+        void print_internal();
+        
+        void init_sink();
+        
+        static const int BUFFER_SIZE = 4096;
+        
+        char _buffer[BUFFER_SIZE];
+        
+        IoStream _sink;
+        
+        Endl _endl;
+        
+        std::string _name, _name_tag;
+        Logger::Severity _severity;
+        Logger::Severity _verbosity_level;
+        
+        
+    };
+    
+    inline void LoggerClass::print_internal()
+    {
+        DPRINTF("%s\n", _buffer);
     }
+
+    
+    
 
 
 } 
