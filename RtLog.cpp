@@ -1,5 +1,29 @@
 #include <XBotInterface/RtLog.hpp>
 
+#define RT_LOG_RESET   "\033[0m"
+#define RT_LOG_BLACK   "\033[30m"      /* Black */
+#define RT_LOG_RED     "\033[31m"      /* Red */
+#define RT_LOG_GREEN   "\033[32m"      /* Green */
+#define RT_LOG_YELLOW  "\033[33m"      /* Yellow */
+#define RT_LOG_BLUE    "\033[34m"      /* Blue */
+#define RT_LOG_MAGENTA "\033[35m"      /* Magenta */
+#define RT_LOG_CYAN    "\033[36m"      /* Cyan */
+#define RT_LOG_WHITE   "\033[37m"      /* White */
+
+#ifndef DPRINTF
+
+#ifdef __XENO__
+    #include <rtdk.h>
+    #define DPRINTF rt_printf
+#else
+    #include <stdio.h>
+    #define DPRINTF printf
+#endif
+
+#endif
+
+#include <pthread.h>
+
 namespace XBot {
     
     LoggerClass Logger::_logger("");
@@ -212,6 +236,12 @@ namespace XBot {
         _severity = Logger::Severity::HIGH;
         _sink.close();
         
+    }
+    
+    
+    inline void LoggerClass::print_internal()
+    {
+        DPRINTF("%s\n", _buffer);
     }
 
 
