@@ -532,6 +532,13 @@ public:
             return _instances.at(filename);
         }
     }
+    
+    
+    static void FlushAll() {
+        for(auto pair: _instances){
+            pair.second->flush();
+        }
+    }
 
 
     /**
@@ -917,13 +924,11 @@ public:
 
 
     ~MatLogger(){
-        flush();
     }
 
 protected:
 
     MatLogger(std::string file_name):
-//         _clog(ConsoleLogger::getLogger()),
         _flushed(false)
     {
         // retrieve time
