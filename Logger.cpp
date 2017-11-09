@@ -21,24 +21,8 @@
 
 namespace XBot {
 
-/////////////////////////////////////////////////////////////////////////////////////
-// LoggerEndl << operator : print the os using the different Logger severity level //
-/////////////////////////////////////////////////////////////////////////////////////
-
-void operator<< ( std::ostream& os, LoggerEndl& log ) {
-    log.print ( os );
-}
-
-std::map<std::string, FileLogger::Ptr> FileLogger::_instance_map;
-
-ConsoleLogger::Ptr ConsoleLogger::_instance;
 
 std::unordered_map<std::string, MatLogger::Ptr> MatLogger::_instances;
-
-// now that SSLogger is completely defined we can implment the print()
-void LoggerEndl::print ( std::ostream& ss ) {
-    _ss_logger->print ( ss );
-}
 
 
 }
