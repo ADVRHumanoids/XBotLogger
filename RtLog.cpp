@@ -1,4 +1,5 @@
 #include <XBotInterface/RtLog.hpp>
+#include <XBotInterface/Thread.h>
 
 #define RT_LOG_RESET   "\033[0m"
 #define RT_LOG_BLACK   "\033[30m"      /* Black */
@@ -22,6 +23,18 @@
 
 #endif
 
+#ifndef DVPRINTF
+
+#ifdef __XENO__
+    #include <rtdk.h>
+    #define DVSNPRINTF rt_vsnprintf
+#else
+    #include <stdio.h>
+    #define DVSNPRINTF vsnprintf
+#endif
+
+#endif
+
 #include <pthread.h>
 
 namespace XBot {
@@ -29,14 +42,30 @@ namespace XBot {
     LoggerClass Logger::_logger("");
     
         
-    std::ostream& Logger::debug(Logger::Severity s)
-    {
-        return _logger.debug(s);
-    }
 
     std::ostream& Logger::error(Logger::Severity s)
     {
         return _logger.error(s);
+    }
+
+    void Logger::error(const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        _logger.__error(Logger::Severity::HIGH, fmt, args);
+        
+        va_end(args);
+    }
+
+    void Logger::error(Logger::Severity s, const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        _logger.__error(s, fmt, args);
+        
+        va_end(args);
     }
 
 
@@ -49,6 +78,29 @@ namespace XBot {
     {
         return _logger.info(s);
     }
+    
+    
+    
+    void Logger::info(const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        _logger.__info(Logger::Severity::LOW, fmt, args);
+        
+        va_end(args);
+    }
+
+    void Logger::info(Logger::Severity s, const char* fmt, ...)
+    {
+            va_list args;
+            va_start(args, fmt);
+            
+            _logger.__info(s, fmt, args);
+            
+            va_end(args);
+    }
+
 
     std::ostream& Logger::log()
     {
@@ -120,18 +172,31 @@ namespace XBot {
     
     LoggerClass::LoggerClass(std::string name):
         _endl(*this),
-        _name(name)
+        _name(name),
+        _mutex(new XBot::Mutex(XBot::Mutex::Type::RECURSIVE))
     {
         if(_name != ""){
             _name_tag = " (" + name + ")";
         }
         
+        _sink.open(_buffer);
     }
+    
+    XBot::LoggerClass::~LoggerClass()
+    {
+        
+        _sink.close();
+        
+        if((int)_verbosity_level <= (int)Logger::Severity::LOW){
+            std::cout << __func__ << std::endl;
+        }
+    }
+
     
     void LoggerClass::init_sink()
     {
         memset(_buffer, 0, BUFFER_SIZE);
-        _sink.open(_buffer);
+        _sink.seekp(0);
     }
 
     
@@ -148,14 +213,19 @@ namespace XBot {
     
     std::ostream& LoggerClass::log()
     {
-        if(!_sink.is_open()){
-            init_sink();
+        std::lock_guard<Mutex> guard(*_mutex);
+        
+        if(_sink.tellp() == 0){
+            memset(_buffer, 0, BUFFER_SIZE);
         }
+        
         return _sink;
     }
     
     std::ostream& LoggerClass::info(Logger::Severity s) 
     {
+        std::lock_guard<Mutex> guard(*_mutex);
+        
         _severity = s;
         
         init_sink();
@@ -163,8 +233,52 @@ namespace XBot {
         return _sink;
     };
     
+    void XBot::LoggerClass::__fmt_print(const char* fmt, va_list args)
+    {
+        int pos = _sink.tellp();
+        int nchars = DVSNPRINTF(&_buffer[pos], (BUFFER_SIZE - pos), fmt, args);
+        
+        _sink.seekp(std::min(pos + nchars, BUFFER_SIZE - 1));
+        
+        print();
+    }
+
+    
+    void LoggerClass::info(Logger::Severity s, const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        __info(s, fmt, args);
+        
+        va_end(args);
+    }
+    
+    void LoggerClass::info(const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        __info(Logger::Severity::LOW, fmt, args);
+        
+        va_end(args);
+        
+    }
+    
+    void XBot::LoggerClass::__info(Logger::Severity s, const char* fmt, va_list args)
+    {
+        std::lock_guard<Mutex> guard(*_mutex);
+        
+        info(s);
+        
+        __fmt_print(fmt, args);
+    }
+
+        
     std::ostream& LoggerClass::error(Logger::Severity s) 
     {
+        std::lock_guard<Mutex> guard(*_mutex);
+        
         _severity = s;
         
         init_sink();
@@ -172,8 +286,40 @@ namespace XBot {
         return _sink;
     };
     
+    void LoggerClass::error(Logger::Severity s, const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        __error(s, fmt, args);
+        
+        va_end(args);
+    }
+    
+    void LoggerClass::error(const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        __error(Logger::Severity::HIGH, fmt, args);
+        
+        va_end(args);
+        
+    }
+    
+    void XBot::LoggerClass::__error(Logger::Severity s, const char* fmt, va_list args)
+    {
+        std::lock_guard<Mutex> guard(*_mutex);
+        
+        error(s);
+        
+        __fmt_print(fmt, args);
+    }
+    
     std::ostream& LoggerClass::warning(Logger::Severity s) 
     {
+        std::lock_guard<Mutex> guard(*_mutex);
+        
         _severity = s;
         
         init_sink();
@@ -181,8 +327,38 @@ namespace XBot {
         return _sink;
     };
     
+//     void LoggerClass::warning(Logger::Severity s, const char* fmt, ...)
+//     {
+//         va_list args;
+//         va_start(args, fmt);
+//         
+//         __warning(s, fmt, args);
+//         
+//         va_end(args);
+//     }
+//     
+//     void LoggerClass::warning(const char* fmt, ...)
+//     {
+//         va_list args;
+//         va_start(args, fmt);
+//         
+//         __warning(Logger::Severity::MID, fmt, args);
+//         
+//         va_end(args);
+//         
+//     }
+    
+    void XBot::LoggerClass::__warning(Logger::Severity s, const char* fmt, va_list args)
+    {
+        warning(s);
+        
+        __fmt_print(fmt, args);
+    }
+    
     std::ostream& LoggerClass::success(Logger::Severity s) 
     {
+        std::lock_guard<Mutex> guard(*_mutex);
+        
         _severity = s;
         
         init_sink();
@@ -190,14 +366,34 @@ namespace XBot {
         return _sink;
     };
     
-    std::ostream& LoggerClass::debug(Logger::Severity s)
+//     void LoggerClass::success(Logger::Severity s, const char* fmt, ...)
+//     {
+//         va_list args;
+//         va_start(args, fmt);
+//         
+//         __success(s, fmt, args);
+//         
+//         va_end(args);
+//     }
+//     
+//     void LoggerClass::success(const char* fmt, ...)
+//     {
+//         va_list args;
+//         va_start(args, fmt);
+//         
+//         __success(Logger::Severity::LOW, fmt, args);
+//         
+//         va_end(args);
+//         
+//     }
+//     
+    void XBot::LoggerClass::__success(Logger::Severity s, const char* fmt, va_list args)
     {
-        _severity = s;
+        success(s);
         
-        init_sink();
-        _sink << "[debug" << _name_tag << "] ";
-        return _sink;
+        __fmt_print(fmt, args);
     }
+
 
     
     Endl& LoggerClass::endl() { return _endl; }
@@ -224,17 +420,19 @@ namespace XBot {
     
     void LoggerClass::print()
     {
-
+        std::lock_guard<Mutex> guard(*_mutex);
+        
+        _sink << color_reset;
+        
+        
         if( (int)_severity >= (int)_verbosity_level ){
             
-            _sink << color_reset;
-            
             print_internal();
-            
+
         }
         
         _severity = Logger::Severity::HIGH;
-        _sink.close();
+
         
     }
     

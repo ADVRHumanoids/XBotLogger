@@ -20,9 +20,13 @@
 #ifndef __XBOT_RT_LOGGER_HPP__
 #define __XBOT_RT_LOGGER_HPP__
 
+
+#include <iostream>
+#include <stdarg.h>
+#include <stdio.h>
+
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/array.hpp>
-#include <iostream>
 
 
 namespace XBot { 
@@ -45,6 +49,12 @@ namespace XBot {
      * 
      */
     class LoggerClass;
+    
+    /**
+     * @brief Forward declaration for Mutex
+     * 
+     */
+    class Mutex;
     
     
     
@@ -95,12 +105,44 @@ namespace XBot {
         static std::ostream& info(Logger::Severity s = Logger::Severity::LOW);
         
         /**
+         * @brief Logs an information message (with bold [INFO] header).
+         * 
+         * @param s Message severity. Defaults to LOW.
+         * @param fmt Formatted string (printf-like)
+         * @param ... Values for the formatted string (printf-like)
+         */
+        static void info(Logger::Severity s, const char * fmt, ...);
+        
+        /**
+         * @brief Logs an information message (with bold [INFO] header).
+         * 
+         * @param fmt Formatted string (printf-like)
+         */
+        static void info(const char * fmt, ...);
+        
+        /**
          * @brief Logs an error message (in red, with bold [ERROR] header).
          * 
          * @param s Message severity. Defaults to HIGH.
          * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
          */
         static std::ostream& error(Logger::Severity s = Logger::Severity::HIGH);
+        
+        /**
+         * @brief Logs an error message (with bold [error] header).
+         * 
+         * @param s Message severity. Defaults to HIGH.
+         * @param fmt Formatted string (printf-like)
+         * @param ... Values for the formatted string (printf-like)
+         */
+        static void error(Logger::Severity s, const char * fmt, ...);
+        
+        /**
+         * @brief Logs an information message (with bold [INFO] header).
+         * 
+         * @param fmt Formatted string (printf-like)
+         */
+        static void error(const char * fmt, ...);
         
         /**
          * @brief Logs a warning message (in yellow, with bold [WARNING] header).
@@ -165,7 +207,11 @@ namespace XBot {
         
         friend class Endl;
         
+        friend class Logger;
+        
         LoggerClass(std::string logger_name);
+        
+        ~LoggerClass();
         
         /**
          * @brief Writes to the internal stream with no special formatting and without changing
@@ -184,12 +230,44 @@ namespace XBot {
         std::ostream& info(Logger::Severity s = Logger::Severity::LOW);
         
         /**
+         * @brief Logs an information message (with bold [INFO] header).
+         * 
+         * @param s Message severity. Defaults to LOW.
+         * @param fmt Formatted string (printf-like)
+         * @param ... Values for the formatted string (printf-like)
+         */
+        void info(Logger::Severity s, const char * fmt, ...);
+        
+        /**
+         * @brief Logs an information message (with bold [INFO] header).
+         * 
+         * @param fmt Formatted string (printf-like)
+         */
+        void info(const char * fmt, ...);
+        
+        /**
          * @brief Logs an error message (in red, with bold [ERROR] header).
          * 
          * @param s Message severity. Defaults to HIGH.
          * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
          */
         std::ostream& error(Logger::Severity s = Logger::Severity::HIGH);
+        
+        /**
+         * @brief Logs an error message (with bold [ERROR] header).
+         * 
+         * @param s Message severity. Defaults to HIGH.
+         * @param fmt Formatted string (printf-like)
+         * @param ... Values for the formatted string (printf-like)
+         */
+        void error(Logger::Severity s, const char * fmt, ...);
+        
+        /**
+         * @brief Logs an error message (with bold [ERROR] header).
+         * 
+         * @param fmt Formatted string (printf-like)
+         */
+        void error(const char * fmt, ...);
         
         /**
          * @brief Logs a warning message (in yellow, with bold [WARNING] header).
@@ -200,6 +278,22 @@ namespace XBot {
         std::ostream& warning(Logger::Severity s = Logger::Severity::MID);
         
         /**
+         * @brief Logs an warning message (with bold [warning] header).
+         * 
+         * @param s Message severity. Defaults to HIGH.
+         * @param fmt Formatted string (printf-like)
+         * @param ... Values for the formatted string (printf-like)
+         */
+        void warning(Logger::Severity s, const char * fmt, ...);
+        
+        /**
+         * @brief Logs an warning message (with bold [warning] header).
+         * 
+         * @param fmt Formatted string (printf-like)
+         */
+        void warning(const char * fmt, ...);
+        
+        /**
          * @brief Logs a success message (in green, with bold [OK] header).
          * 
          * @param s Message severity. Defaults to LOW.
@@ -207,13 +301,6 @@ namespace XBot {
          */
         std::ostream& success(Logger::Severity s = Logger::Severity::LOW);
         
-        /**
-         * @brief Logs a message that is printed only in debug mode (or whenever NDEBUG is not defined)
-         * 
-         * @param s Message severity. Defaults to LOW.
-         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
-         */
-        std::ostream& debug(Logger::Severity s = Logger::Severity::LOW);
         
         /**
          * @brief Closes the message and prints to screen.
@@ -232,6 +319,8 @@ namespace XBot {
          */
         Logger::Severity getVerbosityLevel() const;
         
+        
+        
     private:
         
         typedef boost::iostreams::stream<boost::iostreams::array_sink> IoStream;
@@ -241,6 +330,12 @@ namespace XBot {
         void print_internal();
         
         void init_sink();
+        
+        void __info(Logger::Severity s, const char * fmt, va_list args);
+        void __error(Logger::Severity s, const char * fmt, va_list args);
+        void __warning(Logger::Severity s, const char * fmt, va_list args);
+        void __success(Logger::Severity s, const char * fmt, va_list args);
+        void __fmt_print(const char * fmt, va_list args);
         
         static const int BUFFER_SIZE = 4096;
         
@@ -255,9 +350,9 @@ namespace XBot {
         Logger::Severity _verbosity_level;
         
         
+        std::unique_ptr<Mutex> _mutex;
+        
     };
-    
-    
 
     
     
