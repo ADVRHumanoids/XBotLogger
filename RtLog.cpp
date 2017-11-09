@@ -430,7 +430,7 @@ namespace XBot {
     {
         SET_LOCK_GUARD(*_mutex)
         
-        _sink << color_reset;
+          _sink << color_reset;
         
         
         if( (int)_severity >= (int)_verbosity_level ){
@@ -440,7 +440,6 @@ namespace XBot {
         }
         
         _severity = Logger::Severity::HIGH;
-
         
     }
     
@@ -448,6 +447,10 @@ namespace XBot {
     inline void LoggerClass::print_internal()
     {
         DPRINTF("%s\n", _buffer);
+        
+#if !defined __XENO__ && !defined __COBALT__ 
+        fflush(stdout);
+#endif
     }
 
 
