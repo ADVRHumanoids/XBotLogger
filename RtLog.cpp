@@ -35,6 +35,14 @@
 
 #endif
 
+// #define MT_SAFE
+
+#ifdef MT_SAFE
+#define SET_LOCK_GUARD(x) std::lock_guard<Mutex> guard(x);
+#else
+#define SET_LOCK_GUARD(x)
+#endif
+
 #include <pthread.h>
 
 namespace XBot {
@@ -213,7 +221,7 @@ namespace XBot {
     
     std::ostream& LoggerClass::log()
     {
-        std::lock_guard<Mutex> guard(*_mutex);
+        SET_LOCK_GUARD(*_mutex)
         
         if(_sink.tellp() == 0){
             memset(_buffer, 0, BUFFER_SIZE);
@@ -224,7 +232,7 @@ namespace XBot {
     
     std::ostream& LoggerClass::info(Logger::Severity s) 
     {
-        std::lock_guard<Mutex> guard(*_mutex);
+        SET_LOCK_GUARD(*_mutex)
         
         _severity = s;
         
@@ -267,7 +275,7 @@ namespace XBot {
     
     void XBot::LoggerClass::__info(Logger::Severity s, const char* fmt, va_list args)
     {
-        std::lock_guard<Mutex> guard(*_mutex);
+        SET_LOCK_GUARD(*_mutex)
         
         info(s);
         
@@ -277,7 +285,7 @@ namespace XBot {
         
     std::ostream& LoggerClass::error(Logger::Severity s) 
     {
-        std::lock_guard<Mutex> guard(*_mutex);
+        SET_LOCK_GUARD(*_mutex)
         
         _severity = s;
         
@@ -309,7 +317,7 @@ namespace XBot {
     
     void XBot::LoggerClass::__error(Logger::Severity s, const char* fmt, va_list args)
     {
-        std::lock_guard<Mutex> guard(*_mutex);
+        SET_LOCK_GUARD(*_mutex)
         
         error(s);
         
@@ -318,7 +326,7 @@ namespace XBot {
     
     std::ostream& LoggerClass::warning(Logger::Severity s) 
     {
-        std::lock_guard<Mutex> guard(*_mutex);
+        SET_LOCK_GUARD(*_mutex)
         
         _severity = s;
         
@@ -357,7 +365,7 @@ namespace XBot {
     
     std::ostream& LoggerClass::success(Logger::Severity s) 
     {
-        std::lock_guard<Mutex> guard(*_mutex);
+        SET_LOCK_GUARD(*_mutex)
         
         _severity = s;
         
@@ -420,7 +428,7 @@ namespace XBot {
     
     void LoggerClass::print()
     {
-        std::lock_guard<Mutex> guard(*_mutex);
+        SET_LOCK_GUARD(*_mutex)
         
         _sink << color_reset;
         
