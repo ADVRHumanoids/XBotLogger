@@ -323,7 +323,7 @@ namespace XBot {
         
     private:
         
-        typedef boost::iostreams::stream<boost::iostreams::array_sink> IoStream;
+        typedef boost::iostreams::stream<boost::iostreams::array_sink> ostream_t;
         
         void print();
         
@@ -341,7 +341,7 @@ namespace XBot {
         
         char _buffer[BUFFER_SIZE];
         
-        IoStream _sink;
+        ostream_t _sink;
         
         Endl _endl;
         
