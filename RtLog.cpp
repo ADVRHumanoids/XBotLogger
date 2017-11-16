@@ -23,17 +23,6 @@
 
 #endif
 
-#ifndef DVPRINTF
-
-#ifdef __XENO__
-    #include <rtdk.h>
-    #define DVSNPRINTF rt_vsnprintf
-#else
-    #include <stdio.h>
-    #define DVSNPRINTF vsnprintf
-#endif
-
-#endif
 
 // #define MT_SAFE
 
@@ -72,6 +61,46 @@ namespace XBot {
         va_start(args, fmt);
         
         _logger.__error(s, fmt, args);
+        
+        va_end(args);
+    }
+    
+    void Logger::success(const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        _logger.__success(Logger::Severity::LOW, fmt, args);
+        
+        va_end(args);
+    }
+
+    void Logger::success(Logger::Severity s, const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        _logger.__success(s, fmt, args);
+        
+        va_end(args);
+    }
+    
+    void Logger::warning(const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        _logger.__warning(Logger::Severity::MID, fmt, args);
+        
+        va_end(args);
+    }
+
+    void Logger::warning(Logger::Severity s, const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        _logger.__warning(s, fmt, args);
         
         va_end(args);
     }
@@ -244,7 +273,7 @@ namespace XBot {
     void XBot::LoggerClass::__fmt_print(const char* fmt, va_list args)
     {
         int pos = _sink.tellp();
-        int nchars = DVSNPRINTF(&_buffer[pos], (BUFFER_SIZE - pos), fmt, args);
+        int nchars = vsnprintf(&_buffer[pos], (BUFFER_SIZE - pos), fmt, args);
         
         _sink.seekp(std::min(pos + nchars, BUFFER_SIZE - 1));
         
@@ -335,26 +364,26 @@ namespace XBot {
         return _sink;
     };
     
-//     void LoggerClass::warning(Logger::Severity s, const char* fmt, ...)
-//     {
-//         va_list args;
-//         va_start(args, fmt);
-//         
-//         __warning(s, fmt, args);
-//         
-//         va_end(args);
-//     }
-//     
-//     void LoggerClass::warning(const char* fmt, ...)
-//     {
-//         va_list args;
-//         va_start(args, fmt);
-//         
-//         __warning(Logger::Severity::MID, fmt, args);
-//         
-//         va_end(args);
-//         
-//     }
+    void LoggerClass::warning(Logger::Severity s, const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        __warning(s, fmt, args);
+        
+        va_end(args);
+    }
+    
+    void LoggerClass::warning(const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        __warning(Logger::Severity::MID, fmt, args);
+        
+        va_end(args);
+        
+    }
     
     void XBot::LoggerClass::__warning(Logger::Severity s, const char* fmt, va_list args)
     {
@@ -374,27 +403,28 @@ namespace XBot {
         return _sink;
     };
     
-//     void LoggerClass::success(Logger::Severity s, const char* fmt, ...)
-//     {
-//         va_list args;
-//         va_start(args, fmt);
-//         
-//         __success(s, fmt, args);
-//         
-//         va_end(args);
-//     }
-//     
-//     void LoggerClass::success(const char* fmt, ...)
-//     {
-//         va_list args;
-//         va_start(args, fmt);
-//         
-//         __success(Logger::Severity::LOW, fmt, args);
-//         
-//         va_end(args);
-//         
-//     }
-//     
+    void LoggerClass::success(Logger::Severity s, const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        __success(s, fmt, args);
+        
+        va_end(args);
+    }
+    
+    void LoggerClass::success(const char* fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        
+        __success(Logger::Severity::LOW, fmt, args);
+        
+        va_end(args);
+        
+    }
+    
+    
     void XBot::LoggerClass::__success(Logger::Severity s, const char* fmt, va_list args)
     {
         success(s);

@@ -138,19 +138,35 @@ namespace XBot {
         static void error(Logger::Severity s, const char * fmt, ...);
         
         /**
-         * @brief Logs an information message (with bold [INFO] header).
+         * @brief Logs an error message (with bold [error] header).
          * 
          * @param fmt Formatted string (printf-like)
          */
         static void error(const char * fmt, ...);
         
         /**
-         * @brief Logs a warning message (in yellow, with bold [WARNING] header).
+         * @brief Logs a warning message (in yellow, with bold [warning] header).
          * 
          * @param s Message severity. Defaults to MEDIUM.
          * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
          */
         static std::ostream& warning(Logger::Severity s = Logger::Severity::MID);
+        
+        /**
+         * @brief Logs a warning message (with bold [warning] header).
+         * 
+         * @param s Message severity. Defaults to HIGH.
+         * @param fmt Formatted string (printf-like)
+         * @param ... Values for the formatted string (printf-like)
+         */
+        static void warning(Logger::Severity s, const char * fmt, ...);
+        
+        /**
+         * @brief Logs a warning message (with bold [warning] header).
+         * 
+         * @param fmt Formatted string (printf-like)
+         */
+        static void warning(const char * fmt, ...);
         
         /**
          * @brief Logs a success message (in green, with bold [OK] header).
@@ -161,12 +177,21 @@ namespace XBot {
         static std::ostream& success(Logger::Severity s = Logger::Severity::LOW);
         
         /**
-         * @brief Logs a message that is printed only in debug mode (or whenever NDEBUG is not defined)
+         * @brief Logs a success message (with bold [success] header).
          * 
-         * @param s Message severity. Defaults to LOW.
-         * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
+         * @param s Message severity. Defaults to HIGH.
+         * @param fmt Formatted string (printf-like)
+         * @param ... Values for the formatted string (printf-like)
          */
-        static std::ostream& debug(Logger::Severity s = Logger::Severity::DEBUG);
+        static void success(Logger::Severity s, const char * fmt, ...);
+        
+        /**
+         * @brief Logs an information message (with bold [INFO] header).
+         * 
+         * @param fmt Formatted string (printf-like)
+         */
+        static void success(const char * fmt, ...);
+        
         
         /**
          * @brief Closes the message and prints to screen.
@@ -280,7 +305,7 @@ namespace XBot {
         /**
          * @brief Logs an warning message (with bold [warning] header).
          * 
-         * @param s Message severity. Defaults to HIGH.
+         * @param s Message severity. Defaults to MEDIUM.
          * @param fmt Formatted string (printf-like)
          * @param ... Values for the formatted string (printf-like)
          */
@@ -300,6 +325,22 @@ namespace XBot {
          * @return Reference to std::ostream (it enables to leverage the same interface as std::cout / cerr)
          */
         std::ostream& success(Logger::Severity s = Logger::Severity::LOW);
+        
+        /**
+         * @brief Logs a success message (with bold [success] header).
+         * 
+         * @param s Message severity. Defaults to LOW.
+         * @param fmt Formatted string (printf-like)
+         * @param ... Values for the formatted string (printf-like)
+         */
+        void success(Logger::Severity s, const char * fmt, ...);
+        
+        /**
+         * @brief Logs a success message (with bold [success] header).
+         * 
+         * @param fmt Formatted string (printf-like)
+         */
+        void success(const char * fmt, ...);
         
         
         /**
