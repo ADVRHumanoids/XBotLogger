@@ -70,7 +70,7 @@ target_include_directories(XBotLogger INTERFACE
                             ${EIGEN3_INCLUDE_DIRS}
                             )
 
-target_link_libraries(XBotLogger PRIVATE matio pthread
+target_link_libraries(XBotLogger PUBLIC matio pthread
                                     )
                                     
                                     
