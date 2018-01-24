@@ -37,7 +37,7 @@
 
 #include <matio.h>
 
-#include <XBotInterface/RtLog.hpp>
+#include <XBotLogger/RtLog.hpp>
 
 #define ASYNC_QUEUE_SIZE_BIT 65536
 
