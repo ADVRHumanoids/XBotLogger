@@ -11,7 +11,7 @@ int main(int argc, char **argv){
     /* Log some useless data streams */
     std::vector<double> std_values;
     Eigen::VectorXd eigen_values;
-    Eigen::MatrixXd eigen_values_matrix;
+    Eigen::MatrixXf eigen_values_matrix;
     double scalar_value;
     
     for(int i = 0; i < 100; i++)

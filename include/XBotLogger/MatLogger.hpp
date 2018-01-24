@@ -176,14 +176,15 @@ public:
             }
         }
         else{
-            _single_var_map[name] = data;
+            _single_var_map[name] = data.template cast<double>();;
             return true;
         }
 
     }
 
-    bool log(const std::string& name, const std::vector<double>& data){
-        Eigen::Map<Eigen::MatrixXd> map((double *)data.data(), (int)data.size(), 1);
+    template <typename ScalarType>
+    bool log(const std::string& name, const std::vector<ScalarType>& data){
+        Eigen::Map<Eigen::Matrix<ScalarType, -1, -1> > map((ScalarType *)data.data(), (int)data.size(), 1);
         return add(name, map);
     }
 
@@ -366,7 +367,7 @@ public:
         varinfo.empty = false;
 
         // increment tail position
-        varinfo.tail = (varinfo.tail + 1) ;
+        varinfo.tail = (varinfo.tail + 1);
 
     }
 
@@ -377,8 +378,14 @@ public:
         return add(name, eigen_data, interleave, buffer_capacity);
     }
 
+    
     bool add(const std::string& name, const std::vector<double>& data, int interleave = 1, int buffer_capacity = -1){
         Eigen::Map<Eigen::MatrixXd> map((double *)data.data(), (int)data.size(), 1);
+        return add(name, map, interleave, buffer_capacity);
+    }
+    
+    bool add(const std::string& name, const std::vector<float>& data, int interleave = 1, int buffer_capacity = -1){
+        Eigen::Map<Eigen::MatrixXf> map((float *)data.data(), (int)data.size(), 1);
         return add(name, map, interleave, buffer_capacity);
     }
 
