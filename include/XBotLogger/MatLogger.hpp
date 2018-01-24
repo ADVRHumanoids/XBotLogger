@@ -168,7 +168,7 @@ public:
 
         if( it != _single_var_map.end() ){
             if( it->second.rows() == data.rows() && it->second.cols() == data.cols() ){
-                it->second = data;
+                it->second = data.template cast<double>();
                 return true;
             }
             else{
