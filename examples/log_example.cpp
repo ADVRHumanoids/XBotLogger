@@ -1,7 +1,5 @@
 #include <XBotLogger/Logger.hpp>
 
-#include <unistd.h>
-
 
 int main(int argc, char **argv){
 

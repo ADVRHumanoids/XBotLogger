@@ -42,9 +42,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(MacroInstallLib)
 include(MacroOptionalBuild)
 
-# find first YCM in order to have ${YCM_MODULE_PATH} defined for 3rd party software like Eigen3
-find_package(YCM REQUIRED)
-
 find_package(Eigen3 REQUIRED)
 find_package(Xenomai QUIET)
 
@@ -53,6 +50,7 @@ set(ENABLE_XENO CACHE BOOL "ON")
 
 include_directories(include ${EIGEN3_INCLUDE_DIRS}
                             )
+
 
 
 

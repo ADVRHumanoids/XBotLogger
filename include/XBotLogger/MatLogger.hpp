@@ -29,7 +29,6 @@
 
 #include <eigen3/Eigen/Dense>
 
-#include <spdlog/spdlog.h>
 
 #include <signal.h>
 
