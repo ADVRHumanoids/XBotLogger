@@ -1,5 +1,5 @@
-#include <XBotInterface/RtLog.hpp>
-#include <XBotInterface/Thread.h>
+#include <XBotLogger/RtLog.hpp>
+#include <XBotLogger/Thread.h>
 
 #define RT_LOG_RESET   "\033[0m"
 #define RT_LOG_BLACK   "\033[30m"      /* Black */

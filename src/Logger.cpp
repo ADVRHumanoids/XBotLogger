@@ -17,7 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <XBotInterface/Logger.hpp>
+#include <XBotLogger/Logger.hpp>
 
 namespace XBot {
 
