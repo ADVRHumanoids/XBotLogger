@@ -9,3 +9,6 @@ Package providing a simple, RT safe, logging utility. It supports both console l
 1) `find_package(XBotLogger REQUIRED)`
 2) `include_directories(${XBotLogger_INCLUDE_DIRS})`
 3) `target_link_libraries(TargetName ${XBotLogger_LIBRARIES})`
+
+# More information...
+Check the **[wiki](https://github.com/ADVRHumanoids/XBotLogger/wiki)** page!
